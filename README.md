@@ -1,4 +1,5 @@
 # FastAPI project
+
 - Chạy:
 ```bash
 uvicorn app.main:app --reload --port 8080
@@ -15,5 +16,9 @@ pip install fastapi[all]
 
 ```bash
 python -m venv venv
+```
++ Model: 
+```bash
+pip install -U sentence-transformers
 ```
 
