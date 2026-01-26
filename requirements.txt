@@ -1,0 +1,60 @@
+# ==== WEB FRAMEWORK ====
+fastapi
+uvicorn[standard]
+
+# ==== DATABASE ====
+sqlalchemy
+asyncpg
+psycopg2-binary
+alembic
+
+# ==== FILE PROCESSING ====
+pypdf
+pdfplumber
+python-docx
+python-magic
+python-multipart
+filetype
+
+# ==== AI/ML MODELS ====
+torch
+transformers
+sentence-transformers
+scikit-learn
+numpy
+
+# ==== NLP & TEXT PROCESSING ====
+spacy
+rapidfuzz
+nltk
+
+# ==== DATA PROCESSING ====
+pandas
+
+# ==== AUTHENTICATION & SECURITY ====
+python-jose[cryptography]
+passlib[bcrypt]
+
+# ==== BACKGROUND TASKS ====
+celery
+redis
+
+# ==== CONFIG & ENVIRONMENT ====
+python-dotenv
+pydantic
+pydantic-settings
+
+# ==== LOGGING ====
+structlog
+
+# ==== UTILITIES ====
+click
+tqdm
+httpx
+
+# ==== TESTING ====
+pytest
+pytest-asyncio
+
+# ==== RATE LIMITING ====
+slowapi
