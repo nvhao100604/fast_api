@@ -45,3 +45,8 @@ pip install -r requirements.txt
 ```bash
 create database cv_evaluator_db
 ```
+
++ Chạy file test db connection:
+```bash
+python -m app.tests.test_db
+``` 
