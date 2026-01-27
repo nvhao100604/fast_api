@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.routers import health, model_info   # ✅ ĐÚNG
+from app.api.v1.routers import health, model_info  
 
 api_router = APIRouter()
 

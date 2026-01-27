@@ -6,7 +6,9 @@ Hệ thống sàng lọc tuyển dụng tự động sử dụng FastAPI và mô
 
 - Python 3.13.3
 - FastAPI 25.3
--
+  <<<<<<< HEAD
+- =======
+- > > > > > > > 61a64f6ba44a6b55f6b474d32022fce453f18cf3
 
 ## Hướng dẫn sử dụng:
 

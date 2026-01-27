@@ -12,3 +12,4 @@ try:
         print("✅ Test SELECT 1:", conn.execute(text("SELECT 1")).scalar())
 except Exception as e:
     print("❌ DB connection failed:", e)
+
