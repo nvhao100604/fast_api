@@ -1,8 +1,7 @@
 from fastapi import APIRouter
 from app.services.model_service import model_service
 
-router = APIRouter(tags=["Model"], prefix="/model")
-
+router = APIRouter()
 @router.get("/info",
             summary="Get Model Information",
             description="Get model information such as loaded status and device",
