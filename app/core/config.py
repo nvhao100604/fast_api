@@ -1,17 +1,44 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import computed_field
 from functools import lru_cache
 
+
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "CV Evaluator API"
-    API_V1_STR: str = "/api/v1"
-    MODEL_NAME: str = "all-MiniLM-L6-v2"  # Quản lý tên model tại đây
-    DATABASE_URL: str
-    
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True
+    )
+
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_SERVER: str
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str
+
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    PROJECT_NAME: str
+    ENVIRONMENT: str = "development"
+    MODEL_NAME: str = "all-MiniLM-L6-v2"
+
+    @computed_field
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> str:
+        return (
+            f"postgresql+psycopg2://{self.POSTGRES_USER}:"
+            f"{self.POSTGRES_PASSWORD}@"
+            f"{self.POSTGRES_SERVER}:"
+            f"{self.POSTGRES_PORT}/"
+            f"{self.POSTGRES_DB}"
+        )
+
 
 @lru_cache
-def get_settings():
+def get_settings() -> Settings:
     return Settings()
 
-settings = Settings()
+
+settings = get_settings()
