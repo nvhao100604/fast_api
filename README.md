@@ -6,6 +6,7 @@ Hệ thống sàng lọc tuyển dụng tự động sử dụng FastAPI và mô
 
 - Python 3.13.3
 - FastAPI 25.3
+- 
 
 ## Hướng dẫn sử dụng:
 
@@ -39,3 +40,13 @@ download requirements.txt : de cai dat cac thu vien
 ```bash
 pip install -r requirements.txt
 ```
+
++ Database: Chạy lệnh để tạo db trong PostgreSQL
+```bash
+create database cv_evaluator_db
+```
+
++ Chạy file test db connection:
+```bash
+python -m app.tests.test_db
+``` 
