@@ -6,7 +6,9 @@ Hệ thống sàng lọc tuyển dụng tự động sử dụng FastAPI và mô
 
 - Python 3.13.3
 - FastAPI 25.3
-- 
+  <<<<<<< HEAD
+- =======
+- > > > > > > > 61a64f6ba44a6b55f6b474d32022fce453f18cf3
 
 ## Hướng dẫn sử dụng:
 
@@ -41,12 +43,46 @@ download requirements.txt : de cai dat cac thu vien
 pip install -r requirements.txt
 ```
 
-+ Database: Chạy lệnh để tạo db trong PostgreSQL
+- Database: Chạy lệnh để tạo db trong PostgreSQL
+
 ```bash
 create database cv_evaluator_db
 ```
 
-+ Chạy file test db connection:
+- Chạy file test db connection:
+
 ```bash
-python -m app.tests.test_db
-``` 
+python -m tests.test_db
+```
+
+- nho import model trong thu muc alembic/env.py
+
+```bash
+from app.models import resume, job, evaluation
+sua lai import dong nay
+```
+
+- Tạo migration từ models
+
+```bash
+   alembic revision --autogenerate -m "init tables"
+```
+
+- Apply migration (tạo bảng)
+
+```bash
+alembic upgrade head
+```
+
+- Check DB
+
+```bash
+alembic current
+```
+
+- cac buoc sua model khong can sua tren database
+
+```bash
+alembic revision --autogenerate -m "abc...."
+alembic upgrade head
+```
