@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from app.core.config import get_settings
+from app.core.config import settings
 from app.api.v1.routers.router import api_router
+print("DB =", settings.POSTGRES_DB)
 
 def create_app() -> FastAPI:
     settings = get_settings()
