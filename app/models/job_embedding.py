@@ -1,15 +1,16 @@
-from sqlalchemy import String, ForeignKey, SmallInteger
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.db.base import Base
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, Text, Date
+from app.core.database import Base
+from sqlalchemy.orm import relationship
 from typing import TYPE_CHECKING, List
+from sqlalchemy.sql import func
+from pgvector.sqlalchemy import Vector
 
 class JobEmbedding(Base):
     __tablename__ = "JobEmbeddings"
 
-    Id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     JobId = Column(String(36), ForeignKey("Jobs.Id"))
     ModelName = Column(String(100))
     Vector = Column(Vector(384))
-    CreatedAt = Column(DateTime, default=datetime.utcnow)
+    CreatedAt = Column(DateTime, default=func.now())
 
     job = relationship("Job", back_populates="embeddings")

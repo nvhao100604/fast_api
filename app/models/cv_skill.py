@@ -1,3 +1,7 @@
+from sqlalchemy import DECIMAL, Column, String, ForeignKey
+from app.core.database import Base
+from sqlalchemy.orm import relationship
+
 class CVSkill(Base):
     __tablename__ = "CVSkills"
 

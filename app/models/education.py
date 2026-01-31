@@ -1,12 +1,11 @@
-from sqlalchemy import String, ForeignKey, SmallInteger
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.db.base import Base
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, Text, Date
+from app.core.database import Base
+from sqlalchemy.orm import relationship
 from typing import TYPE_CHECKING, List
 
 class Education(Base):
     __tablename__ = "Educations"
 
-    Id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     CVId = Column(String(36), ForeignKey("CVs.Id"))
     Degree = Column(String(200))
     Major = Column(String(200))
