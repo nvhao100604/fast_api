@@ -62,7 +62,7 @@ sua lai import dong nay
 - Tạo migration từ models
 
 ```bash
-   alembic revision --autogenerate -m "init tables"
+alembic revision --autogenerate -m "init tables"
 ```
 
 - Apply migration (tạo bảng)
