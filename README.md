@@ -102,15 +102,14 @@ alembic upgrade head
 alembic current
 ```
 ## 5. Vận hành & Kiểm tra
-### Chạy toàn bộ dự án:
-```bash
-docker-compose up --build -d
-```
 ### Chạy Server FastAPI:
 ```bash
 uvicorn app.main:app --reload --port 8080
 ```
-
+### Chạy toàn bộ dự án:
+```bash
+docker-compose up --build -d
+```
 ### Tài liệu API:
 Swagger UI: [Swagger_docs](http://localhost:8080/docs)
 
