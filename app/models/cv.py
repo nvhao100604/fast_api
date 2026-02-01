@@ -1,10 +1,9 @@
 from sqlalchemy import String, ForeignKey, SmallInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.db.base import Base
+from app.core.database import Base
 from typing import TYPE_CHECKING, List
 
-# if TYPE_CHECKING:
-#     from .ordering import Order
+
 
 class CV(Base):
     __tablename__ = "CVs"

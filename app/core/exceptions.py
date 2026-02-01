@@ -19,7 +19,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             data=None,
             message=f"Invalid data: {full_message}",
             meta={"errors": exc.errors()} # Trả về chi tiết lỗi trong meta để FE dễ debug
-        ).dict()
+        ).model_dump()
     )
 
 async def value_error_handler(request: Request, exc: ValueError):
