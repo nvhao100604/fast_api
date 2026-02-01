@@ -108,8 +108,17 @@ uvicorn app.main:app --reload --port 8080
 ```
 ### Chạy toàn bộ dự án:
 ```bash
-docker-compose up --build -d
+docker compose up -d
 ```
+#### Khi build, sửa code và muốn cập nhật vào Docker:
+```bash
+docker compose up --build -d
+```
+#### Khi bạn muốn dừng hoàn toàn:
+```bash
+docker compose down
+```
+
 ### Tài liệu API:
 Swagger UI: [Swagger_docs](http://localhost:8080/docs)
 
