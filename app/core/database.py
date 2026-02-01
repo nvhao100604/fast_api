@@ -19,4 +19,4 @@ SessionLocal = sessionmaker(
 
 # Base
 class Base(DeclarativeBase):
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    Id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

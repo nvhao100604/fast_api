@@ -1,39 +1,46 @@
-from sqlalchemy import String, ForeignKey, SmallInteger
+from datetime import datetime
+from typing import TYPE_CHECKING, List, Optional
+
+from sqlalchemy import String, Text, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
-from typing import TYPE_CHECKING, List
+from app.models.enum import CVFileType
+from sqlalchemy import Enum as SQLEnum
 
-
+if TYPE_CHECKING:
+    from app.models.candidate import Candidate
+    from app.models.cv_skill import CVSkill
+    from app.models.experience import Experience
+    from app.models.education import Education
+    from app.models.cv_embedding import CVEmbedding
+    from app.models.match_result import MatchResult
 
 class CV(Base):
     __tablename__ = "CVs"
 
-    Id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    CandidateId = Column(String(36), ForeignKey("Candidates.Id"))
-    FileUrl = Column(String(500))
-    FileType = Column(String(20))
-    RawText = Column(Text)
-    CleanText = Column(Text)
-    Summary = Column(Text)
-    Language = Column(String(20))
-    CreatedAt = Column(DateTime, default=datetime.utcnow)
+    CandidateId: Mapped[int] = mapped_column(ForeignKey("Candidates.Id"))
+    FileUrl: Mapped[str] = mapped_column(String(500))
+    FileType: Mapped[Optional[CVFileType]] = mapped_column(SQLEnum(CVFileType), nullable=True,
+                                                            default=CVFileType.PDF) 
 
-    embeddings = relationship("CVEmbedding", back_populates="cv", cascade="all, delete-orphan")
-    experiences = relationship("Experience", back_populates="cv", cascade="all, delete-orphan")
-    educations = relationship("Education", back_populates="cv", cascade="all, delete-orphan")
-    skills = relationship("CVSkill", back_populates="cv", cascade="all, delete-orphan")
-    match_results = relationship("MatchResult", back_populates="cv")
+    RawText: Mapped[Optional[str]] = mapped_column(Text)
+    CleanText: Mapped[Optional[str]] = mapped_column(Text)
+    Summary: Mapped[Optional[str]] = mapped_column(Text)
+    Language: Mapped[Optional[str]] = mapped_column(String(20), server_default="en")
+    CreatedAt: Mapped[datetime] = mapped_column(server_default=func.now())
 
-
-# class Staff(Base):
-#     __tablename__ = "staff"
-#     name: Mapped[str] = mapped_column(String(255))
-#     email: Mapped[str] = mapped_column(String(255))
-#     phoneNumber: Mapped[str] = mapped_column(String(10))
-#     username: Mapped[str] = mapped_column(String(255))
-#     password: Mapped[str] = mapped_column(String(255))
-#     status: Mapped[int] = mapped_column(SmallInteger, default=1)
-    
-#     roleID: Mapped[int] = mapped_column(ForeignKey("roles.id"))
-#     role: Mapped["Role"] = relationship(back_populates="staffs")
-#     orders: Mapped[List["Order"]] = relationship(back_populates="staff")
+    # --- Relationships ---
+    candidate: Mapped["Candidate"] = relationship(back_populates="cvs")
+    skills: Mapped[List["CVSkill"]] = relationship(
+        back_populates="cv", cascade="all, delete-orphan"
+    )
+    experiences: Mapped[List["Experience"]] = relationship(
+        back_populates="cv", cascade="all, delete-orphan"
+    )
+    educations: Mapped[List["Education"]] = relationship(
+        back_populates="cv", cascade="all, delete-orphan"
+    )
+    embeddings: Mapped[List["CVEmbedding"]] = relationship(
+        back_populates="cv", cascade="all, delete-orphan"
+    )
+    match_results: Mapped[List["MatchResult"]] = relationship(back_populates="cv")

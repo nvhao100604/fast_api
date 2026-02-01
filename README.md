@@ -62,7 +62,7 @@ sua lai import dong nay
 - Tạo migration từ models
 
 ```bash
-   alembic revision --autogenerate -m "init tables"
+alembic revision --autogenerate -m "init tables"
 ```
 
 - Apply migration (tạo bảng)
@@ -82,4 +82,9 @@ alembic current
 ```bash
 alembic revision --autogenerate -m "abc...."
 alembic upgrade head
+```
+
++ Chạy docker có pgvector:
+```bash
+docker run --name my-postgres-vector -e POSTGRES_PASSWORD=<123456> -p 5432:5432 -d ankane/pgvector
 ```

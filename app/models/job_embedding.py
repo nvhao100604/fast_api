@@ -1,15 +1,28 @@
-from sqlalchemy import String, ForeignKey, SmallInteger
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional
+
+from sqlalchemy import String, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.db.base import Base
-from typing import TYPE_CHECKING, List
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import Enum as SQLEnum
+from app.models.enum import EmbeddingType
+from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.models.job import Job
 
 class JobEmbedding(Base):
     __tablename__ = "JobEmbeddings"
 
-    Id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    JobId = Column(String(36), ForeignKey("Jobs.Id"))
-    ModelName = Column(String(100))
-    Vector = Column(Vector(384))
-    CreatedAt = Column(DateTime, default=datetime.utcnow)
+    JobId: Mapped[int] = mapped_column(ForeignKey("Jobs.Id"))
+    ModelName: Mapped[str] = mapped_column(String(100))
+    Vector: Mapped[list] = mapped_column(Vector(384))
+    EmbeddingType: Mapped["EmbeddingType"] = mapped_column(SQLEnum(EmbeddingType), nullable=False,
+                                                           default=EmbeddingType.ALL)
+    CreatedAt: Mapped[datetime] = mapped_column(server_default=func.now())
+    UpdatedAt: Mapped[Optional[datetime]] = mapped_column(
+        server_default=func.now(), 
+        onupdate=func.now()
+    )
 
-    job = relationship("Job", back_populates="embeddings")
+    job: Mapped["Job"] = relationship(back_populates="embeddings")

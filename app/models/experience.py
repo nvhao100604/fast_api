@@ -1,17 +1,21 @@
-from sqlalchemy import String, ForeignKey, SmallInteger
+from datetime import date
+from typing import TYPE_CHECKING, Optional
+
+from sqlalchemy import String, ForeignKey, Date, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.db.base import Base
-from typing import TYPE_CHECKING, List
+from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.models.cv import CV
 
 class Experience(Base):
     __tablename__ = "Experiences"
 
-    Id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    CVId = Column(String(36), ForeignKey("CVs.Id"))
-    Company = Column(String(200))
-    Position = Column(String(200))
-    StartDate = Column(Date)
-    EndDate = Column(Date)
-    DurationMonths = Column(Integer)
+    CVId: Mapped[int] = mapped_column(ForeignKey("CVs.Id"))
+    Company: Mapped[str] = mapped_column(String(200))
+    Position: Mapped[Optional[str]] = mapped_column(String(200))
+    StartDate: Mapped[Optional[date]] = mapped_column(Date)
+    EndDate: Mapped[Optional[date]] = mapped_column(Date)
+    DurationMonths: Mapped[Optional[int]] = mapped_column(Integer)
 
-    cv = relationship("CV", back_populates="experiences")
+    cv: Mapped["CV"] = relationship(back_populates="experiences")
