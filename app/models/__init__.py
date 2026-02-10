@@ -10,5 +10,5 @@ from .job import Job
 from .job_embedding import JobEmbedding
 from .job_skill import JobSkill
 from .match_result import MatchResult
-from .screenBatch import ScreeningBatch
+from .screen_batch import ScreeningBatch
 from .skill import Skill

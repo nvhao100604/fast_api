@@ -20,8 +20,10 @@ class CV(Base):
 
     CandidateId: Mapped[int] = mapped_column(ForeignKey("Candidates.Id"))
     FileUrl: Mapped[str] = mapped_column(String(500))
-    FileType: Mapped[Optional[CVFileType]] = mapped_column(SQLEnum(CVFileType), nullable=True,
-                                                            default=CVFileType.PDF) 
+    FileType: Mapped[Optional[CVFileType]] = mapped_column(
+        SQLEnum(CVFileType),
+        nullable=True,
+        default=CVFileType.PDF) 
 
     RawText: Mapped[Optional[str]] = mapped_column(Text)
     CleanText: Mapped[Optional[str]] = mapped_column(Text)

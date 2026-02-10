@@ -18,8 +18,10 @@ class Education(Base):
     Degree: Mapped[Optional[str]] = mapped_column(String(200))
     Major: Mapped[Optional[str]] = mapped_column(String(200))
     School: Mapped[Optional[str]] = mapped_column(String(200))
-    Level: Mapped[Optional[EducationLevel]] = mapped_column(SQLEnum(EducationLevel), nullable=True, 
-                                                            default=EducationLevel.BACHELOR)
+    Level: Mapped[Optional[EducationLevel]] = mapped_column(
+        SQLEnum(EducationLevel),
+        nullable=True, 
+        default=EducationLevel.BACHELOR)
     GraduationYear: Mapped[Optional[int]] = mapped_column(Integer)
     GPA: Mapped[Optional[Decimal]] = mapped_column(Numeric(3, 2))
 

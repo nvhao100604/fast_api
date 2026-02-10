@@ -9,7 +9,7 @@ from app.core.database import Base
 from app.models.enum import UserStatus
 
 if TYPE_CHECKING:
-    from app.models.screenBatch import ScreeningBatch
+    from app.models.screen_batch import ScreeningBatch
 
 class Hr(Base):
     __tablename__ = "Hr"

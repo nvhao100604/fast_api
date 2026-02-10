@@ -17,8 +17,10 @@ class CVEmbedding(Base):
     CVId: Mapped[int] = mapped_column(ForeignKey("CVs.Id"))
     ModelName: Mapped[str] = mapped_column(String(100))
     Vector: Mapped[list] = mapped_column(Vector(384)) 
-    EmbeddingType: Mapped["EmbeddingType"] = mapped_column(SQLEnum(EmbeddingType), nullable=False,
-                                                            default=EmbeddingType.ALL)
+    EmbeddingType: Mapped["EmbeddingType"] = mapped_column(
+        SQLEnum(EmbeddingType), 
+        nullable=False,
+        default=EmbeddingType.ALL)
     CreatedAt: Mapped[datetime] = mapped_column(server_default=func.now())
 
     cv: Mapped["CV"] = relationship(back_populates="embeddings")
