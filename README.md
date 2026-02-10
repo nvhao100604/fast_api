@@ -84,7 +84,8 @@ alembic revision --autogenerate -m "abc...."
 alembic upgrade head
 ```
 
-+ Chạy docker có pgvector:
+- Chạy docker có pgvector:
+
 ```bash
-docker run --name my-postgres-vector -e POSTGRES_PASSWORD=<123456> -p 5432:5432 -d ankane/pgvector
+docker run --name my-postgres-vector -e POSTGRES_PASSWORD=12345 -p 5432:5432 -d ankane/pgvector
 ```
