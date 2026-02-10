@@ -1,7 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
-from app.api.v1.schemas.candidate import CandidateResponse
 from app.models.enum import CVFileType
 
 # Schema cơ sở chứa các thông tin cốt lõi của một bản CV

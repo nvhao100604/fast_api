@@ -1,2 +1,2 @@
-import schemas
+from .schemas import *
 from .routers import router

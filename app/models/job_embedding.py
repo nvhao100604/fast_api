@@ -28,3 +28,4 @@ class JobEmbedding(Base):
     )
 
     job: Mapped["Job"] = relationship(back_populates="embeddings")
+    

@@ -22,6 +22,8 @@ services:
     restart: always
     ports:
       - "8080:8080"
+    volumes:
+      - .:/app
     environment:
       # Chú ý: Host của DB lúc này là tên service "db"
       - DATABASE_URL=postgresql://postgres:123456@db:5432/cv_evaluator_db

@@ -119,6 +119,18 @@ docker compose up --build -d
 docker compose down
 ```
 
+### Quy trình cập nhập database trên môi trường đã build
+#### 1. Tạo file migration mới (Revision):
+```bash
+docker-compose exec web alembic revision --autogenerate -m <"description_of_change">
+```
+#### 2. Kiểm tra file
+Kiểm tra lần nữa file đã chỉnh sửa.
+#### 3. Áp dụng vào DB:
+```bash
+docker-compose exec web alembic upgrade head
+```
+
 ### Tài liệu API:
 Swagger UI: [Swagger_docs](http://localhost:8080/docs)
 

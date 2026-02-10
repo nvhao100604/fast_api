@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from app.models.job_skill import JobSkill
     from app.models.match_result import MatchResult
     from app.models.screen_batch import ScreeningBatch
+    from app.models.job_embedding import JobEmbedding
 
 class Job(Base):
     __tablename__ = "Jobs"
@@ -37,3 +38,4 @@ class Job(Base):
     batches: Mapped[List["ScreeningBatch"]] = relationship(
         back_populates="job", 
         cascade="all, delete-orphan")
+    embeddings: Mapped[List["JobEmbedding"]] = relationship(back_populates="job")
