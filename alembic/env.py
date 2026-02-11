@@ -4,7 +4,7 @@ from alembic import context
 
 from app.core.config import settings
 from app.core.database import Base
-from app.models import resume, job, evaluation  # import model để load metadata
+from app.models import cv, job, evaluation  # import model để load metadata
 
 config = context.config
 
