@@ -66,6 +66,14 @@ def get_current_active_user(
     return current_user
 
 
+
+
+# ════════════════════════════════════════════════════════
+# ROLE-BASED DEPENDENCIES
+# ════════════════════════════════════════════════════════
+
+
+
 def require_hr(
     current_user: User = Depends(get_current_active_user),
 ) -> User:
@@ -99,3 +107,36 @@ def require_applicant(
         )
     return current_user
 
+
+
+
+def require_admin(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """
+    Chỉ ADMIN.
+    Dùng cho: tạo HR, nâng/hạ quyền, xem thống kê hệ thống.
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền. Yêu cầu vai trò Admin.",
+        )
+    return current_user
+
+
+def require_hr_or_admin(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """
+    HR hoặc ADMIN — dùng cho các endpoint quản lý users.
+    ADMIN làm được mọi thứ HR làm + có thêm quyền riêng.
+
+    Dùng cho: xem danh sách users, khóa tài khoản, xóa user.
+    """
+    if current_user.role not in (UserRole.HR, UserRole.ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền. Yêu cầu vai trò HR hoặc Admin.",
+        )
+    return current_user

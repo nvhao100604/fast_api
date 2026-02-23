@@ -132,3 +132,6 @@ def delete_user(
     db: Session = Depends(get_db),
 ):
     user_service.delete_user(db, user_id)
+
+
+
