@@ -1,16 +1,26 @@
-from sqlalchemy.sql import func
-from pgvector.sqlalchemy import Vector
-from sqlalchemy import String, ForeignKey, Column, DateTime
-from sqlalchemy.orm import relationship
-from app.core.database import Base
-from typing import TYPE_CHECKING, List
+from datetime import datetime
+from typing import TYPE_CHECKING
 
+from sqlalchemy import String, ForeignKey, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from pgvector.sqlalchemy import Vector
+from app.core.database import Base
+from sqlalchemy import Enum as SQLEnum
+from app.models.enum import EmbeddingType
+
+if TYPE_CHECKING:
+    from app.models.cv import CV
+    
 class CVEmbedding(Base):
     __tablename__ = "CVEmbeddings"
 
-    CVId = Column(String(36), ForeignKey("CVs.Id"))
-    ModelName = Column(String(100))
-    Vector = Column(Vector(384))
-    CreatedAt = Column(DateTime, default=func.now())
+    CVId: Mapped[int] = mapped_column(ForeignKey("CVs.Id"))
+    ModelName: Mapped[str] = mapped_column(String(100))
+    Vector: Mapped[list] = mapped_column(Vector(384)) 
+    EmbeddingType: Mapped["EmbeddingType"] = mapped_column(
+        SQLEnum(EmbeddingType), 
+        nullable=False,
+        default=EmbeddingType.ALL)
+    CreatedAt: Mapped[datetime] = mapped_column(server_default=func.now())
 
-    cv = relationship("CV", back_populates="embeddings")
+    cv: Mapped["CV"] = relationship(back_populates="embeddings")
