@@ -23,7 +23,13 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
 
     # ── Phân quyền & trạng thái ──────────────────────────
-    role        = Column(SQLEnum(UserRole), default=UserRole.APPLICANT, nullable=False)
+    role: Mapped[UserRole] = mapped_column(
+        SQLEnum(
+            UserRole,
+            values_callable=lambda obj: [e.value for e in obj]
+        ),
+        default=UserRole.APPLICANT,
+    )    
     is_active   = Column(Boolean, default=True,  nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
 

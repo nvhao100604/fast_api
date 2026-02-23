@@ -35,3 +35,11 @@ class EmbeddingType(enum.Enum):
 class UserRole(str , enum.Enum):
     HR = "hr"
     APPLICANT = "applicant"
+    ADMIN     = "admin"
+
+class UserStatus(str, enum.Enum):
+
+    ACTIVE   = "active"
+    INACTIVE = "inactive"
+    BANNED   = "banned"
+    PENDING  = "pending"
