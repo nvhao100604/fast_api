@@ -17,8 +17,10 @@ class JobEmbedding(Base):
     JobId: Mapped[int] = mapped_column(ForeignKey("Jobs.Id"))
     ModelName: Mapped[str] = mapped_column(String(100))
     Vector: Mapped[list] = mapped_column(Vector(384))
-    EmbeddingType: Mapped["EmbeddingType"] = mapped_column(SQLEnum(EmbeddingType), nullable=False,
-                                                           default=EmbeddingType.ALL)
+    EmbeddingType: Mapped["EmbeddingType"] = mapped_column(
+        SQLEnum(EmbeddingType),
+        nullable=False,
+        default=EmbeddingType.ALL)
     CreatedAt: Mapped[datetime] = mapped_column(server_default=func.now())
     UpdatedAt: Mapped[Optional[datetime]] = mapped_column(
         server_default=func.now(), 
@@ -26,3 +28,4 @@ class JobEmbedding(Base):
     )
 
     job: Mapped["Job"] = relationship(back_populates="embeddings")
+    
