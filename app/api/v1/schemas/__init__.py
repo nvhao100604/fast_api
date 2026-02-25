@@ -1,10 +1,4 @@
 from .response import ResponseSchema
-from .candidate import (
-    CandidateBase,
-    CandidateCreate,
-    CandidateUpdate,
-    CandidateResponse
-)
 
 from .cv import (
     CVBase,
@@ -13,12 +7,6 @@ from .cv import (
     CVResponse
 )
 
-from .hr import (
-    HrBase,
-    HrCreate,
-    HrUpdate,
-    HrResponse
-)
 
 from .job import (
     JobBase,

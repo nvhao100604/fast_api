@@ -1,7 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from typing import Optional
-from app.api.v1.schemas.hr import HrResponse
 from app.api.v1.schemas.job import JobResponse
 from app.models.enum import BatchStatus
 

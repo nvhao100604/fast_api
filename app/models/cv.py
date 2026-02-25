@@ -8,7 +8,7 @@ from app.models.enum import CVFileType
 from sqlalchemy import Enum as SQLEnum
 
 if TYPE_CHECKING:
-    from app.models.candidate import Candidate
+    from app.models.User import User
     from app.models.cv_skill import CVSkill
     from app.models.experience import Experience
     from app.models.education import Education
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class CV(Base):
     __tablename__ = "CVs"
 
-    CandidateId: Mapped[int] = mapped_column(ForeignKey("Candidates.Id"))
+    UserId: Mapped[int] = mapped_column(ForeignKey("users.Id"))
     FileUrl: Mapped[str] = mapped_column(String(500))
     FileType: Mapped[Optional[CVFileType]] = mapped_column(
         SQLEnum(CVFileType),
@@ -32,7 +32,8 @@ class CV(Base):
     CreatedAt: Mapped[datetime] = mapped_column(server_default=func.now())
 
     # --- Relationships ---
-    candidate: Mapped["Candidate"] = relationship(back_populates="cvs")
+
+    user = relationship("User", back_populates="cvs")
     skills: Mapped[List["CVSkill"]] = relationship(
         back_populates="cv", cascade="all, delete-orphan"
     )

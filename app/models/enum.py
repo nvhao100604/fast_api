@@ -30,4 +30,16 @@ class BatchStatus(enum.Enum):
 
 class EmbeddingType(enum.Enum):
     ALL = "all"
-    
+
+
+class UserRole(str , enum.Enum):
+    HR = "hr"
+    APPLICANT = "applicant"
+    ADMIN     = "admin"
+
+class UserStatus(str, enum.Enum):
+
+    ACTIVE   = "active"
+    INACTIVE = "inactive"
+    BANNED   = "banned"
+    PENDING  = "pending"
