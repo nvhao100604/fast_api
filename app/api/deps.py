@@ -110,20 +110,13 @@ def require_applicant(
 
 
 
-def require_admin(
-    current_user: User = Depends(get_current_active_user),
-) -> User:
-    """
-    Chỉ ADMIN.
-    Dùng cho: tạo HR, nâng/hạ quyền, xem thống kê hệ thống.
-    """
+def require_admin(current_user: User = Depends(get_current_active_user)) -> User:
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Bạn không có quyền. Yêu cầu vai trò Admin.",
+            detail="Chỉ ADMIN mới được phép thực hiện hành động này."
         )
     return current_user
-
 
 def require_hr_or_admin(
     current_user: User = Depends(get_current_active_user),

@@ -211,3 +211,26 @@ def _build_token_response(user: User) -> TokenResponse:
         refresh_token=create_refresh_token(user_id=user_id),
     )
 
+
+
+def create_hr(db, data):
+    existing = db.query(User).filter(User.email == data.email).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email đã tồn tại."
+        )
+
+    hr = User(
+        email=data.email,
+        hashed_password=hash_password(data.password),
+        full_name=data.full_name,
+        role=UserRole.HR,
+        is_active=True,
+        is_verified=True,  # HR tạo bởi admin thì auto verified
+    )
+
+    db.add(hr)
+    db.commit()
+    db.refresh(hr)
+    return hr
