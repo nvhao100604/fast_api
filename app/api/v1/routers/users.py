@@ -5,10 +5,11 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.api.deps import get_current_active_user, require_hr
+from app.api.deps import get_current_active_user, require_admin, require_hr
 from app.models.User import User, UserRole
 from app.services import user_service
 from app.api.v1.schemas.user import (
+    HRCreate,
     PaginatedUsers,
     PasswordChange,
     UserPublicResponse,
@@ -135,3 +136,16 @@ def delete_user(
 
 
 
+@router.post(
+    "/admin/create-hr",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="[ADMIN] Tạo tài khoản HR",
+    description="Chỉ ADMIN mới được tạo tài khoản HR."
+)
+def create_hr(
+    data: HRCreate,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return user_service.create_hr(db, data)
