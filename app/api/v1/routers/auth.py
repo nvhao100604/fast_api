@@ -9,6 +9,7 @@ from app.models.User import User
 from app.services import user_service
 from app.api.v1.schemas.user import (
     ForgotPasswordRequest,
+    LoginRequest,
     RefreshTokenRequest,
     ResetPasswordRequest,
     TokenResponse,
@@ -42,25 +43,45 @@ def register(
 
 # ─── ĐĂNG NHẬP ───────────────────────────────────────────────
 
+# @router.post(
+#     "/login",
+#     response_model=TokenResponse,
+#     summary="Đăng nhập",
+#     description="""
+#     Xác thực bằng email + password (dạng **form-data**).
+#     Trả về `access_token` (30 phút) và `refresh_token` (7 ngày).
+#     """,
+# )
+# def login(
+#     form_data: OAuth2PasswordRequestForm = Depends(),
+#     db: Session = Depends(get_db),
+# ):
+    
+
+#     # OAuth2PasswordRequestForm dùng field `username` — ở đây là email
+#     return user_service.login_user(db, email=form_data.username, password=form_data.password)
+
 @router.post(
     "/login",
     response_model=TokenResponse,
     summary="Đăng nhập",
     description="""
-    Xác thực bằng email + password (dạng **form-data**).
-    Trả về `access_token` (30 phút) và `refresh_token` (7 ngày).
+    Đăng nhập bằng JSON body:
+    {
+        "email": "example@gmail.com",
+        "password": "12345678"
+    }
     """,
 )
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    body: LoginRequest,
     db: Session = Depends(get_db),
 ):
-    
-
-    # OAuth2PasswordRequestForm dùng field `username` — ở đây là email
-    return user_service.login_user(db, email=form_data.username, password=form_data.password)
-
-
+    return user_service.login_user(
+        db,
+        email=body.email,
+        password=body.password
+    )
 # ─── ĐĂNG XUẤT ───────────────────────────────────────────────
 
 @router.post(

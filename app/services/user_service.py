@@ -44,9 +44,26 @@ def register_user(db: Session, data: UserRegister) -> User:
     )
 
 
-def login_user(db: Session, email: str, password: str) -> TokenResponse:
+# def login_user(db: Session, email: str, password: str) -> TokenResponse:
 
-    user = user_crud.get_user_by_email(db, email)
+#     user = user_crud.get_user_by_email(db, email)
+
+#     if not user or not verify_password(password, user.hashed_password):
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Email hoặc mật khẩu không chính xác."
+#         )
+
+#     if not user.is_active:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Tài khoản đã bị khóa."
+#         )
+
+#     return _build_token_response(user)
+
+def login_user(db: Session, email: str, password: str) -> TokenResponse:
+    user: User | None = user_crud.get_user_by_email(db, email)
 
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
@@ -57,11 +74,16 @@ def login_user(db: Session, email: str, password: str) -> TokenResponse:
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tài khoản đã bị khóa."
+            detail="Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên."
+        )
+
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vui lòng xác thực email trước khi đăng nhập."
         )
 
     return _build_token_response(user)
-
 
 def refresh_user_tokens(db: Session, refresh_token: str) -> TokenResponse:
 

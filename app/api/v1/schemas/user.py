@@ -131,3 +131,7 @@ class HRCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     full_name: str
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
