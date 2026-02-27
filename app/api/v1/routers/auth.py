@@ -43,45 +43,25 @@ def register(
 
 # ─── ĐĂNG NHẬP ───────────────────────────────────────────────
 
-# @router.post(
-#     "/login",
-#     response_model=TokenResponse,
-#     summary="Đăng nhập",
-#     description="""
-#     Xác thực bằng email + password (dạng **form-data**).
-#     Trả về `access_token` (30 phút) và `refresh_token` (7 ngày).
-#     """,
-# )
-# def login(
-#     form_data: OAuth2PasswordRequestForm = Depends(),
-#     db: Session = Depends(get_db),
-# ):
-    
-
-#     # OAuth2PasswordRequestForm dùng field `username` — ở đây là email
-#     return user_service.login_user(db, email=form_data.username, password=form_data.password)
-
 @router.post(
     "/login",
     response_model=TokenResponse,
     summary="Đăng nhập",
     description="""
-    Đăng nhập bằng JSON body:
-    {
-        "email": "example@gmail.com",
-        "password": "12345678"
-    }
+    Xác thực bằng email + password (dạng **form-data**).
+    Trả về `access_token` (30 phút) và `refresh_token` (7 ngày).
     """,
 )
 def login(
-    body: LoginRequest,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    return user_service.login_user(
-        db,
-        email=body.email,
-        password=body.password
-    )
+    
+
+    # OAuth2PasswordRequestForm dùng field `username` — ở đây là email
+    return user_service.login_user(db, email=form_data.username, password=form_data.password)
+
+
 # ─── ĐĂNG XUẤT ───────────────────────────────────────────────
 
 @router.post(
