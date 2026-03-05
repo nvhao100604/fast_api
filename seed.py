@@ -79,7 +79,7 @@ SEED_USERS = [
 ]
 
 
-def seed():
+def seed_user():
     print("Tao bang DB...")
     Base.metadata.create_all(bind=engine)
 
@@ -110,6 +110,34 @@ def seed():
     finally:
         db.close()
 
+def seed_jobs(db, n=50):
+    import random
+    from decimal import Decimal
+    from faker import Faker
+    from app.models.job import Job
+    from app.models.enum import JobStatus, EducationLevel
+
+    fake = Faker()
+
+    jobs = []
+
+    for _ in range(n):
+        job = Job(
+            Title=fake.job(),
+            Description=fake.text(max_nb_chars=200),
+            RequirementsText=fake.text(max_nb_chars=200),
+            MinExperience=Decimal(str(round(random.uniform(0, 5), 1))),
+            EducationLevel=random.choice(list(EducationLevel)),
+            Status=random.choice(list(JobStatus)),
+        )
+        jobs.append(job)
+
+    db.add_all(jobs)
+    db.commit()
+
+    print(f"✅ Seeded {n} jobs")
 
 if __name__ == "__main__":
-    seed()
+    seed_user()
+    db = SessionLocal()
+    seed_jobs(db, n=50)
