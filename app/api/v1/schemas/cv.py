@@ -7,6 +7,13 @@ from app.models.enum import CVFileType
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
+class CVUploadResponse(BaseModel):
+    cv_id: int
+    file_url: str
+
+    class Config:
+        from_attributes = True
+
 class PersonalInfoBase(BaseModel):
     Summary: Optional[str] = None
     Language: Optional[str] = Field("en", max_length=20)

@@ -24,3 +24,13 @@ def save_file_to_disk(file: UploadFile, folder_path: str, filename: str) -> str:
 def check_file_extension(filename: str, allowed_extensions: list) -> bool:
     """Kiểm tra định dạng file có hợp lệ không."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in allowed_extensions
+
+async def parse_cv_file(file: UploadFile) -> dict:
+    # TODO: xử lý file PDF/DOCX, trích xuất educations/experiences/skills
+    # Trả về dict dạng:
+    # {
+    #     "educations": [...],
+    #     "experiences": [...],
+    #     "skills": [{"SkillId": 1, "Confidence": 0.9}, ...]
+    # }
+    raise NotImplementedError
