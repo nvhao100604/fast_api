@@ -3,6 +3,22 @@ from datetime import datetime
 from typing import Optional
 from app.models.enum import CVFileType
 
+
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Optional
+
+class PersonalInfoBase(BaseModel):
+    Summary: Optional[str] = None
+    Language: Optional[str] = Field("en", max_length=20)
+
+class PersonalInfoUpdate(BaseModel):
+    Summary: Optional[str] = None
+    Language: Optional[str] = None
+
+class PersonalInfoResponse(PersonalInfoBase):
+    Id: int
+    model_config = ConfigDict(from_attributes=True)
+    
 # Schema cơ sở chứa các thông tin cốt lõi của một bản CV
 class CVBase(BaseModel):
     UserId: int

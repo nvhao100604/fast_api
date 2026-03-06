@@ -28,7 +28,7 @@ def get_cv_by_id(db: Session, cv_id: int) -> Optional[CV]:
     """
     return db.query(CV).filter(CV.Id == cv_id).first()
 
-def create_cv(db: Session, applicant_id: int, path: str, file_type: Any) -> CV:
+def create_cv(db: Session, applicant_id: int, path: str, file_type: Any):
     """
     Lưu metadata của file CV mới. 
     Lưu ý: 'version' được quản lý tự động qua mốc thời gian CreatedAt.
@@ -43,7 +43,7 @@ def create_cv(db: Session, applicant_id: int, path: str, file_type: Any) -> CV:
     db.refresh(db_cv)
     return db_cv
 
-def get_latest_cv(db: Session, applicant_id: int) -> Optional[CV]:
+def get_latest_cv(db: Session, applicant_id: int):
     """
     Truy vấn bản CV mới nhất để hiển thị mặc định hoặc thực hiện phân tích.
     """

@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
 from decimal import Decimal
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 from app.models.enum import EducationLevel
 
 class EducationBase(BaseModel):
@@ -25,5 +26,4 @@ class EducationUpdate(BaseModel):
 
 class EducationResponse(EducationBase):
     Id: int
-    
     model_config = ConfigDict(from_attributes=True)
