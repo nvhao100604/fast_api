@@ -27,6 +27,7 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
+
 # ── CORS Middleware ───────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,

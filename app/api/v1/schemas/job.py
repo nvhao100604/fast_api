@@ -17,6 +17,11 @@ class JobBase(BaseModel):
 class JobCreate(JobBase):
     pass
 
+class JobFilter(BaseModel):
+    title: Optional[str] = None
+    requirement: Optional[str] = None
+    status: Optional[JobStatus] = None
+
 # Schema hỗ trợ cập nhật tin tuyển dụng (tất cả các trường đều là Optional)
 class JobUpdate(BaseModel):
     Title: Optional[str] = None
@@ -30,5 +35,6 @@ class JobUpdate(BaseModel):
 class JobResponse(JobBase):
     Id: int 
     CreatedAt: datetime
+    Status: JobStatus
 
     model_config = ConfigDict(from_attributes=True)
