@@ -71,10 +71,6 @@ Mở pgAdmin, kết nối vào server (localhost:5432) và chạy các lệnh sa
 ```sql
 -- Kích hoạt extension Vector
 CREATE EXTENSION IF NOT EXISTS vector;
-
--- Xóa các bảng và Type cũ để tránh lỗi xung đột khi Migration
-DROP TABLE IF EXISTS "Hr", "Jobs", "CVs", "alembic_version" CASCADE;
-DROP TYPE IF EXISTS userstatus, cvfiletype, jobstatus, educationlevel, batchstatus, embeddingtype CASCADE;
 ```
 
 ## 4. Cấu hình Migration (Alembic)
