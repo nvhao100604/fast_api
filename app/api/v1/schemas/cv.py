@@ -1,11 +1,34 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from typing import Optional
 from app.models.enum import CVFileType
 
+
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Optional
+
+class CVUploadResponse(BaseModel):
+    cv_id: int
+    file_url: str
+
+    class Config:
+        from_attributes = True
+
+class PersonalInfoBase(BaseModel):
+    Summary: Optional[str] = None
+    Language: Optional[str] = Field("en", max_length=20)
+
+class PersonalInfoUpdate(BaseModel):
+    Summary: Optional[str] = None
+    Language: Optional[str] = None
+
+class PersonalInfoResponse(PersonalInfoBase):
+    Id: int
+    model_config = ConfigDict(from_attributes=True)
+    
 # Schema cơ sở chứa các thông tin cốt lõi của một bản CV
 class CVBase(BaseModel):
-    CandidateId: int
+    UserId: int
     FileUrl: str
     FileType: Optional[CVFileType] = CVFileType.PDF
     Language: Optional[str] = "en"
@@ -24,6 +47,12 @@ class CVUpdate(BaseModel):
     CleanText: Optional[str] = None
     Summary: Optional[str] = None
     Language: Optional[str] = None
+
+class CVFilter(BaseModel):
+    FileType: Optional[CVFileType] = Field(None, description="Lọc theo loại file (PDF/DOCX)")
+    Language: Optional[str] = Field(None, description="Lọc theo ngôn ngữ")
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
 # Schema định dạng dữ liệu trả về cho Frontend
 class CVResponse(CVBase):
