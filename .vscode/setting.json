@@ -1,0 +1,15 @@
+{
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.indexing": true,
+    "editor.suggestSelection": "first",
+    "editor.acceptSuggestionOnEnter": "on",
+    "python.analysis.extraPaths": [
+        "./"
+    ],
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "app",
+            "depth": 5
+        }
+    ]
+}
