@@ -1,90 +1,91 @@
+import hashlib
+import bcrypt
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Any
-import uuid
-
+from typing import Any, Optional, Union
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
-from app.core.config import settings
+from app.core.config import get_settings
+from app.core import TokenType
 
+settings = get_settings()
 
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-)
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_SECONDS = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+REFRESH_TOKEN_EXPIRE_SECONDS = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
+RESET_TOKEN_EXPIRE_SECONDS = 15 * 60 
 
 
 def hash_password(password: str) -> str:
-    password = password[:72]
-    return pwd_context.hash(password)
+    """Sử dụng cơ chế hash 2 lớp: SHA256 -> Bcrypt để tương thích file mới."""
+    prepared_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(prepared_password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
 
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Tên hàm giữ nguyên để các file Service/Login không bị lỗi."""
+    try:
+        prepared_password = hashlib.sha256(plain_password.encode('utf-8')).hexdigest()
+        return bcrypt.checkpw(
+            prepared_password.encode('utf-8'), 
+            hashed_password.encode('utf-8')
+        )
+    except Exception:
+        return False
 
-def verify_password(password: str, hashed: str) -> bool:
-    password = password[:72]
-    return pwd_context.verify(password, hashed)
+# --- CORE TOKEN LOGIC ---
 
-
-def _create_token(subject: Any, token_type: str, expires_delta: timedelta, extra: dict = {}) -> str:
-    """Hàm nội bộ tạo JWT với type và thời hạn tùy chỉnh."""
-    expire = datetime.now(timezone.utc) + expires_delta
+def _create_token_base(subject: Any, expires_delta: int, token_type: str, extra: dict = {}) -> str:
+    """Hàm nội bộ tạo JWT với cấu trúc thống nhất."""
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(seconds=expires_delta)
     payload = {
         "sub": str(subject),
         "exp": expire,
+        "iat": now,
         "type": token_type,
         **extra,
     }
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
+# --- 3 HÀM TẠO TOKEN (Giữ nguyên tên, tham số nhận thêm 'role') ---
 
 def create_access_token(user_id: int, email: str, role: str) -> str:
-    """
-    Tạo Access Token (ngắn hạn).
-    Chứa user_id, email, role để tránh truy vấn DB mỗi request.
-    """
-    return _create_token(
+    """Đã đổi roleId thành role trong payload."""
+    return _create_token_base(
         subject=user_id,
-        token_type="access",
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        expires_delta=ACCESS_TOKEN_EXPIRE_SECONDS,
+        token_type=TokenType.ACCESS,
         extra={"email": email, "role": role},
     )
 
-
 def create_refresh_token(user_id: int) -> str:
-    """
-    Tạo Refresh Token (dài hạn).
-    Chỉ chứa user_id — dùng để cấp access token mới.
-    """
-    return _create_token(
+    return _create_token_base(
         subject=user_id,
-        token_type="refresh",
-        expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_delta=REFRESH_TOKEN_EXPIRE_SECONDS,
+        token_type=TokenType.REFRESH,
     )
-
 
 def create_reset_token(email: str) -> str:
-    """
-    Tạo Reset Token (ngắn hạn).
-    Subject là email thay vì user_id để dễ tìm user khi reset.
-    """
-    return _create_token(
+    return _create_token_base(
         subject=email,
-        token_type="reset",
-        expires_delta=timedelta(minutes=settings.RESET_TOKEN_EXPIRE_MINUTES),
+        expires_delta=RESET_TOKEN_EXPIRE_SECONDS,
+        token_type=TokenType.RESET,
     )
 
+# --- DECODE/VERIFY  ---
 
 def decode_token(token: str, expected_type: Optional[str] = None) -> Optional[dict]:
+    """Hàm giải mã token chính yếu."""
     try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-        )
-
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         if expected_type and payload.get("type") != expected_type:
             return None
-
         return payload
-
     except JWTError:
         return None
+
+def verify_token(token: str, expected_type: str = TokenType.ACCESS) -> Optional[dict]:
+    """Alias của decode_token để tránh lỗi ở các file gọi tên hàm này."""
+    return decode_token(token, expected_type)

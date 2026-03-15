@@ -4,7 +4,10 @@ from .cv import (
     CVBase,
     CVCreate,
     CVUpdate,
-    CVResponse
+    CVResponse,
+    PersonalInfoBase,
+    PersonalInfoUpdate,
+    PersonalInfoResponse
 )
 
 
@@ -19,7 +22,11 @@ from .skill import (
     SkillBase,
     SkillCreate,
     SkillUpdate,
-    SkillResponse
+    SkillResponse,
+    CVSkillBase,
+    CVSkillCreate,
+    CVSkillUpdate,
+    CVSkillResponse
 )
 
 from .education import (
@@ -45,19 +52,6 @@ from .job_embedding import (
     JobEmbeddingCreate,
     JobEmbeddingUpdate,
     JobEmbeddingResponse
-)
-
-from .cv_skill import (
-    CVSkillBase,
-    CVSkillCreate,
-    CVSkillUpdate,
-    CVSkillResponse
-)
-from .job_skill import (
-    JobSkillBase,
-    JobSkillCreate,
-    JobSkillUpdate,
-    JobSkillResponse
 )
 
 from .screen_batch import (
