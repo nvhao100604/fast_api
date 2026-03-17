@@ -1,8 +1,8 @@
-"""init tables
+"""update tables
 
-Revision ID: 30f5761b28af
+Revision ID: c1e9a578d81d
 Revises: 
-Create Date: 2026-02-23 13:59:36.535355
+Create Date: 2026-03-06 16:49:14.194140
 
 """
 from typing import Sequence, Union
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 import pgvector.sqlalchemy
 
 # revision identifiers, used by Alembic.
-revision: str = '30f5761b28af'
+revision: str = 'c1e9a578d81d'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -48,7 +48,7 @@ def upgrade() -> None:
     sa.Column('full_name', sa.String(length=255), nullable=False),
     sa.Column('phone', sa.String(length=20), nullable=True),
     sa.Column('hashed_password', sa.String(length=255), nullable=False),
-    sa.Column('role', sa.Enum('HR', 'APPLICANT', name='userrole'), nullable=False),
+    sa.Column('role', sa.Enum('hr', 'applicant', 'admin', name='userrole'), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_verified', sa.Boolean(), nullable=False),
     sa.Column('reset_token', sa.String(length=512), nullable=True),

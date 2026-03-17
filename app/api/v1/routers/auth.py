@@ -9,7 +9,6 @@ from app.models.User import User
 from app.services import user_service
 from app.api.v1.schemas.user import (
     ForgotPasswordRequest,
-    LoginRequest,
     RefreshTokenRequest,
     ResetPasswordRequest,
     TokenResponse,
@@ -55,19 +54,15 @@ def register(
     }
     """,
 )
-def login(
-    body: LoginRequest,
+async def login(
+    body: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
     return user_service.login_user(
         db,
-        email=body.email,
+        email=body.username,
         password=body.password
     )
-
-    # OAuth2PasswordRequestForm dùng field `username` — ở đây là email
-    return user_service.login_user(db, email=form_data.username, password=form_data.password)
-
 
 # ─── ĐĂNG XUẤT ───────────────────────────────────────────────
 
@@ -82,7 +77,7 @@ def login(
     > 💡 Để hỗ trợ **token blacklist** phía server, tích hợp Redis ở bước sau.
     """,
 )
-def logout(
+async def logout(
     _: User = Depends(get_current_active_user),
 ):
     return {"message": "Đăng xuất thành công."}
@@ -96,7 +91,7 @@ def logout(
     summary="Làm mới Access Token",
     description="Dùng `refresh_token` để lấy cặp token mới khi `access_token` hết hạn.",
 )
-def refresh_token(
+async def refresh_token(
     body: RefreshTokenRequest,
     db: Session = Depends(get_db),
 ):
@@ -115,7 +110,7 @@ def refresh_token(
     (bảo vệ khỏi email enumeration attack).
     """,
 )
-def forgot_password(
+async def forgot_password(
     body: ForgotPasswordRequest,
     db: Session = Depends(get_db),
 ):
@@ -131,7 +126,7 @@ def forgot_password(
     summary="Đặt lại mật khẩu",
     description="Đặt mật khẩu mới bằng token nhận từ email. Token chỉ dùng được **1 lần**.",
 )
-def reset_password(
+async def reset_password(
     body: ResetPasswordRequest,
     db: Session = Depends(get_db),
 ):
