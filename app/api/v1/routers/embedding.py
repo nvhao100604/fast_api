@@ -1,5 +1,5 @@
 from fastapi import APIRouter, logger
-from app.services.sentence_transformer_service import model_service
+from app.services.embbeding_service import model_service
 
 router = APIRouter()
 

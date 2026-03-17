@@ -16,11 +16,13 @@ CHẠY: python fix_seed.py
 from app.core.database import Base, engine, SessionLocal
 from app.core.security import hash_password
 from app.models.User import User
+from app.models.cv_embedding import CVEmbedding
+from app.models.job import Job, JobEmbedding
+from app.services.embbeding_service import model_service
 
 # ── Import trực tiếp string value thay vì dùng Enum object ──
 # Thay vì: UserRole.ADMIN  (gửi "ADMIN" → lỗi)
 # Dùng  : "admin"          (gửi "admin" → đúng)
-
 SEED_USERS = [
     {
         "email":           "admin@cvsystem.com",
@@ -77,7 +79,6 @@ SEED_USERS = [
         "is_verified":     True,
     },
 ]
-
 
 def seed_user():
     print("Tao bang DB...")
@@ -137,7 +138,32 @@ def seed_jobs(db, n=50):
 
     print(f"✅ Seeded {n} jobs")
 
+def seed_job_embeddings():
+    try:
+        db = SessionLocal()
+        
+        
+        db.commit()
+    except Exception as e:       
+        db.rollback() 
+        print(f"Loi: {e}")
+    finally:
+        db.close()
+        
+def seed_cv_embeddings():
+    try:
+        db = SessionLocal()
+        
+        
+        db.commit()
+    except Exception as e:       
+        db.rollback() 
+        print(f"Loi: {e}")
+    finally:
+        db.close()        
+
 if __name__ == "__main__":
     seed_user()
-    db = SessionLocal()
     seed_jobs(db, n=50)
+    seed_job_embeddings()
+    db = SessionLocal()
