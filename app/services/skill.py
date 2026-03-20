@@ -6,6 +6,9 @@ from app.crud import skill as skill_crud
 
 from app.api.v1.schemas.skill import SkillCreate, SkillUpdate
 
+def get_skill_by_name(db:Session, skill_name):
+    return skill_crud.get_skill_by_name(db, skill_name)
+
 def create_skill_service(db: Session, skill_in: SkillCreate):
     """Admin thêm kỹ năng mới vào danh mục master."""
     existing = skill_crud.get_skill_by_name(db, skill_in.Name)
@@ -45,17 +48,13 @@ def delete_skill_master_service(db: Session, skill_id: int) -> bool:
     return success
 
 def add_skill_to_cv(db: Session, user_id: int, skill_in: CVSkillCreate):
-    """
-    Service điều phối việc gắn kỹ năng vào hồ sơ.
-    Bóc tách các trường Confidence và Source từ schema CVSkillCreate.
-    """
+    skill_dict = skill_in.model_dump(exclude_unset=True) 
+    print(f"Service đang đẩy dict vào CRUD: {skill_dict}")
+
     return skill_crud.create_cv_skill(
         db=db,
-        cv_id=skill_in.CVId,
         user_id=user_id,
-        skill_id=skill_in.SkillId,
-        confidence=skill_in.Confidence,
-        source=skill_in.Source
+        data=skill_dict
     )
 
 def patch_skill_service(db: Session, cv_skill_id: int, cv_id: int, user_id: int, update_data: CVSkillUpdate):

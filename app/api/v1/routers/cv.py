@@ -25,7 +25,7 @@ async def upload_cv(
     current_user: User = Depends(get_current_user)
 ):
     # Service xử lý lưu file vật lý và tạo record trong DB
-    new_cv = await cv_services.upload_and_create_cv(
+    new_cv = cv_services.upload_and_create_cv(
         db=db, 
         file=file, 
         user_id=current_user.Id
@@ -102,42 +102,26 @@ async def download_cv(
         
     return FileResponse(path=file_path, filename=f"CV_{cv_id}.pdf")
 
-# 4. PARSED DATA 
-# @private_router.get(
-#     "/{cv_id}/parsed",
-#     response_model=ResponseSchema[CVParsedResponse],
-#     summary="Get Parsed CV Data",
-#     description="View the structured data extracted from the CV (JSON format)."
-# )
-# async def get_parsed_data(
-#     cv_id: int,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     parsed_data = cv_services.get_cv_parsed_content(db=db, cv_id=cv_id, user_id=current_user.id)
-    
-#     return ResponseSchema[CVParsedResponse](
-#         success=True,
-#         message="Fetched parsed data successfully",
-#         data=parsed_data
-#     )
-
 # 5. TRIGGER PARSING
-# @private_router.post(
-#     "/{cv_id}/parse-trigger",
-#     response_model=ResponseSchema,
-#     summary="Trigger CV Parsing",
-#     description="Manually trigger the background task to extract data from CV."
-# )
-# async def trigger_parsing(
-#     cv_id: int,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     success = await cv_services.run_cv_parsing_task(db=db, cv_id=cv_id, user_id=current_user.id)
-    
-#     return ResponseSchema(
-#         success=success,
-#         message="Parsing task triggered successfully" if success else "Failed to trigger parsing",
-#         data=None
-#     )
+@private_router.post(
+    "/{cv_id}/parse-trigger",
+    response_model=ResponseSchema,
+    summary="Trigger CV Parsing",
+    description="Trích xuất và lưu thông tin học vấn, kinh nghiệm, kỹ năng từ file CV."
+)
+async def trigger_parsing(
+    cv_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    cv_services.run_cv_parsing_task(
+        db=db,
+        cv_id=cv_id,
+        current_user=current_user
+    )
+
+    return ResponseSchema(
+        success=True,
+        message="CV parsed and saved successfully",
+        data=None
+    )

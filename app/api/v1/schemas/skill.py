@@ -36,6 +36,7 @@ class CVSkillUpdate(BaseModel):
 
 class CVSkillResponse(CVSkillBase):
     Id: int
+    
     # Lồng thêm thông tin chi tiết từ bảng Skill Master
     skill_master: Optional[SkillResponse] = None 
     model_config = ConfigDict(from_attributes=True)

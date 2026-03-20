@@ -24,7 +24,7 @@ def create_education(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    data = edu_service.add_education(db, current_user.Id, edu)
+    data = edu_service.create_education(db, current_user.Id, edu)
     if not data:
         raise HTTPException(status_code=403, detail="CVId không hợp lệ hoặc bạn không có quyền sở hữu.")
     return ResponseSchema[EducationResponse](
@@ -47,7 +47,7 @@ def patch_education(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    data = edu_service.patch_education_service(
+    data = edu_service.update_education_service(
         db=db,
         edu_id=edu_id,
         cv_id=cv_id,
