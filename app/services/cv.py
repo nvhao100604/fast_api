@@ -2,21 +2,25 @@ from os import path
 
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 import os
-
+import json
 
 from app.api.v1.schemas.cv import CVFilter
+from app.api.v1.schemas.education import EducationCreate
+from app.api.v1.schemas.experience import ExperienceCreate
+from app.api.v1.schemas.skill import CVSkillCreate
 from app.crud import cv as cv_crud
+from app.services import (
+    experience as exp_service,
+    education as edu_service,
+    skill as skill_service,
+    job as job_service
+    )
 from app.models.enum import CVFileType, UserRole
 from app.utils import file_handling as file_utils
+from app.models import User
 
 UPLOAD_BASE_DIR = "uploads/cvs"
-
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-from app.crud import cv as cv_crud
-from app.models import User
 
 def get_cv_details(db: Session, cv_id: int, current_user: User):
     """
@@ -46,6 +50,7 @@ def get_cv_details(db: Session, cv_id: int, current_user: User):
         detail="Bạn không có quyền truy cập vào hồ sơ CV này."
     )
 
+
 def upload_and_create_cv(db: Session, file: UploadFile, user_id: int):
     # 1. Validation (Dùng util)
     if not file_utils.check_file_extension(file.filename, ["pdf", "doc", "docx"]):
@@ -58,7 +63,8 @@ def upload_and_create_cv(db: Session, file: UploadFile, user_id: int):
     try:
         new_filename = file_utils.generate_unique_filename(user_id, file.filename)
         user_folder = f"{UPLOAD_BASE_DIR}/{user_id}"
-        
+        os.makedirs(user_folder, exist_ok=True) 
+
         saved_path = file_utils.save_file_to_disk(
             file=file, 
             folder_path=user_folder, 
@@ -127,3 +133,76 @@ def get_cv_file_path(db: Session, cv_id: int, current_user: User) -> str:
         )
         
     return cv_record.FileUrl
+
+
+def run_cv_parsing_task(db: Session, cv_id: int, current_user: User):
+    cv_record = get_cv_details(db=db, cv_id=cv_id, current_user=current_user)
+
+    if not os.path.exists(cv_record.FileUrl):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File vật lý không tồn tại trên hệ thống."
+        )
+
+    try:
+        result = file_utils.parse_cv_file(cv_record.FileUrl)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Parsing error: {str(e)}")
+
+    parsed = result["parsed"]
+    print(f"===DATA PARSED===")
+    print(f"{parsed}")
+
+    # Kiểm tra position có tồn tại trong hệ thống không
+    position_name = parsed.get("position", "")
+    job = job_service.get_job_by_name(db, position_name)
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Vị trí '{position_name}' không tồn tại trong hệ thống. Vui lòng kiểm tra lại CV."
+        )
+
+    # Lưu RawText, CleanText, Summary, PositionId
+    cv_crud.save_parsed_data(db=db, cv_id=cv_id, parsed_data={
+        "RawText": result["raw_text"],
+        "CleanText": result["clean_text"],
+        "Summary": parsed.get("summary"),
+        "PositionId": job.Id
+    })
+
+    # Insert Education
+    for edu_data in parsed.get("educations", []):
+        try:
+            edu_in = EducationCreate(**edu_data, CVId=cv_id)
+            edu_service.create_education(db, current_user.Id, edu_in)
+        except Exception:
+            continue
+
+    # Insert Experience
+    for exp_data in parsed.get("experiences", []):
+        try:
+            exp_in = ExperienceCreate(**exp_data, CVId=cv_id)
+            exp_service.add_experience(db, current_user.Id, exp_in)
+        except Exception:
+            continue
+
+    # Insert Skill
+    for skill_data in parsed.get("skills", []):
+        try:
+            print("===SKILL CHECKING===")
+            print(skill_data.get("SkillName"))
+            if not isinstance(skill_data, dict):
+                continue
+            skill_master = skill_service.get_skill_by_name(db, skill_data.get("SkillName", ""))
+            if not skill_master:
+                continue
+            skill_in = CVSkillCreate(
+                CVId=cv_id,
+                SkillId=skill_master.Id,
+                Confidence=skill_data.get("Confidence")
+            )
+            skill_service.add_skill_to_cv(db, current_user, skill_in)
+        except Exception:
+            continue
