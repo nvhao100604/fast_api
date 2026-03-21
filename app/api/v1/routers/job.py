@@ -19,7 +19,7 @@ async def get_all_jobs(
     db: Session = Depends(get_db),
 ):
     """Xem danh sách tất cả các job, có thể lọc theo title, requirement text, status."""
-    jobs, total = await job_service.get_jobs(db, filters)
+    jobs, total = job_service.get_jobs(db, filters)
     return [JobResponse.model_validate(job) for job in jobs]
 
 
@@ -49,7 +49,7 @@ async def update_job(
 ):
     """Cập nhật thông tin của một job (title, description, requirements_text)."""
     updated_job = job_service.update_job(db, job_id, job_data)
-    return await JobResponse.model_validate(updated_job)
+    return JobResponse.model_validate(updated_job)
 
 @router.post("/", response_model=JobResponse, summary="Tạo một job mới")
 async def create_job(
@@ -59,5 +59,4 @@ async def create_job(
 ):
     """Tạo một job mới với thông tin được cung cấp."""
     new_job = job_service.create_job(db, **job_data.model_dump())
-    return await JobResponse.model_validate(new_job)
-
+    return JobResponse.model_validate(new_job)

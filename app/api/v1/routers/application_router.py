@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.api.deps import get_current_user, require_applicant, require_hr_or_admin
+from app.api.deps import get_current_user, require_applicant, require_hr, require_hr_or_admin
 from app.models.User import User, UserRole
 from app.api.v1.schemas.application_schemas import (
     ApplicationCreate,
@@ -85,13 +85,13 @@ async def get_application(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Cập nhật trạng thái (HR / Admin)
+# Cập nhật trạng thái (HR)
 # ─────────────────────────────────────────────────────────────────────────────
 @router.patch(
     "/{application_id}/status",
     response_model=ApplicationDetailResponse,
     summary="Cập nhật trạng thái ứng viên (Applied → Shortlisted → Interview → Rejected/Hired)",
-    dependencies=[Depends(require_hr_or_admin)]
+    dependencies=[Depends(require_hr)]
 )
 async def update_application_status(
     application_id: int,

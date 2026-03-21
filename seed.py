@@ -110,34 +110,49 @@ def seed_user():
     finally:
         db.close()
 
-def seed_jobs(db, n=50):
-    import random
-    from decimal import Decimal
-    from faker import Faker
+def seed_jobs(db, csv_path="../fake_job_postings.csv"):
+    import csv
     from app.models.job import Job
     from app.models.enum import JobStatus, EducationLevel
 
-    fake = Faker()
+    # Mapping cột CSV (0-indexed) sang thuộc tính Job:
+    #   cột 2  (index 1)  → Title
+    #   cột 7  (index 6)  → Description
+    #   cột 8  (index 7)  → RequirementsText
+    #   cột 14 (index 13) → MinExperience  ← tạm để trống (dữ liệu đang là text)
+    #   cột 15 (index 14) → (chưa dùng, placeholder)
+    COL_TITLE        = 1
+    COL_DESC         = 6
+    COL_REQUIREMENTS = 7
+    COL_MIN_EXP      = 13  # TODO: đổi kiểu dữ liệu trước khi dùng
+    COL_EXTRA        = 14
 
     jobs = []
 
-    for _ in range(n):
-        job = Job(
-            Title=fake.job(),
-            Description=fake.text(max_nb_chars=200),
-            RequirementsText=fake.text(max_nb_chars=200),
-            MinExperience=Decimal(str(round(random.uniform(0, 5), 1))),
-            EducationLevel=random.choice(list(EducationLevel)),
-            Status=random.choice(list(JobStatus)),
-        )
-        jobs.append(job)
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        next(reader)  # bỏ dòng header
+
+        for row in reader:
+            if len(row) <= COL_EXTRA:
+                continue  # bỏ qua dòng thiếu cột
+
+            job = Job(
+                Title=row[COL_TITLE].strip() or None,
+                Description=row[COL_DESC].strip() or None,
+                RequirementsText=row[COL_REQUIREMENTS].strip() or None,
+                MinExperience=None,              # TODO: cột 14 đang là text, chưa map
+                EducationLevel=list(EducationLevel)[0],  # placeholder
+                Status=list(JobStatus)[0],               # placeholder
+            )
+            jobs.append(job)
 
     db.add_all(jobs)
     db.commit()
 
-    print(f"✅ Seeded {n} jobs")
+    print(f"✅ Seeded {len(jobs)} jobs từ '{csv_path}'")
 
 if __name__ == "__main__":
     seed_user()
     db = SessionLocal()
-    seed_jobs(db, n=50)
+    seed_jobs(db)
