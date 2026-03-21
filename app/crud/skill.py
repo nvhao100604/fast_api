@@ -1,6 +1,3 @@
-from decimal import Decimal
-from typing import Optional
-
 from sqlalchemy.orm import Session
 from app.models.cv import CV
 from app.models.cv_skill import CVSkill
@@ -41,34 +38,28 @@ def get_skill_by_name(db: Session, name: str):
     """Tìm kỹ năng trong bảng danh mục Master."""
     return db.query(Skill).filter(Skill.Name.ilike(name)).first()
 
-def create_cv_skill(
-    db: Session, 
-    cv_id: int, 
-    user_id: int, 
-    skill_id: int, 
-    confidence: Optional[Decimal] = None, 
-    source: Optional[str] = None
-):
-    """
-    Gắn kỹ năng từ bảng Master vào CV của ứng viên (Insert).
-    Xác thực: Kiểm tra CV có thuộc quyền sở hữu của user_id không.
-    """
-    # 1. Kiểm tra quyền sở hữu CV
-    cv_exists = db.query(CV).filter(CV.Id == cv_id, CV.UserId == user_id).first()
-    if not cv_exists:
-        return None
+def create_cv_skill(db: Session, user_id: int, data: dict):
+    cv_id = data.get("CVId")
+    skill_id = data.get("SkillId")
 
-    # 2. Tạo bản ghi CVSkill với các trường mới
-    db_cv_skill = CVSkill(
-        CVId=cv_id,
-        SkillId=skill_id,
-        Confidence=confidence,
-        Source=source
-    )
-    
-    db.add(db_cv_skill)
+    db_cv_skill = db.query(CVSkill).filter(
+        CVSkill.CVId == cv_id, 
+        CVSkill.SkillId == skill_id
+    ).first()
+
+    if db_cv_skill:
+        for key, value in data.items():
+            if hasattr(db_cv_skill, key) and key not in ["Id", "CVId", "SkillId"]:
+                setattr(db_cv_skill, key, value)
+        print(f"Đã dùng setattr để cập nhật SkillId {skill_id}")
+    else:
+        db_cv_skill = CVSkill(**data)
+        db.add(db_cv_skill)
+        print(f"Đã dùng unpacking để tạo mới SkillId {skill_id}")
+
     db.commit()
     db.refresh(db_cv_skill)
+
     return db_cv_skill
 
 def update_cv_skill(db: Session, cv_skill_id: int, cv_id: int, user_id: int, update_data: dict):

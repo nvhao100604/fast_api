@@ -8,7 +8,7 @@ from app.models.enum import CVFileType
 from sqlalchemy import Enum as SQLEnum
 
 if TYPE_CHECKING:
-    from app.models.User import User
+    from app.models.job import Job
     from app.models.cv_skill import CVSkill
     from app.models.experience import Experience
     from app.models.education import Education
@@ -31,6 +31,7 @@ class CV(Base):
     Summary: Mapped[Optional[str]] = mapped_column(Text)
     Language: Mapped[Optional[str]] = mapped_column(String(20), server_default="en")
     CreatedAt: Mapped[datetime] = mapped_column(server_default=func.now())
+    PositionId: Mapped[Optional[int]] = mapped_column(ForeignKey("Jobs.Id"), nullable=True)
 
     # --- Relationships ---
 
@@ -51,3 +52,5 @@ class CV(Base):
     )
     applications: Mapped[List["Application"]] = relationship(back_populates="cv"
     )
+    position: Mapped[Optional["Job"]] = relationship(back_populates="cvs")
+    match_results: Mapped[List["MatchResult"]] = relationship(back_populates="cv")

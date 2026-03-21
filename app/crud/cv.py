@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from app.models.cv import CV
 
@@ -36,7 +36,8 @@ def create_cv(db: Session, applicant_id: int, path: str, file_type: Any):
     db_cv = CV(
         UserId=applicant_id,
         FileUrl=path,
-        FileType=file_type
+        FileType=file_type,
+        Position=""
     )
     db.add(db_cv)
     db.commit()
