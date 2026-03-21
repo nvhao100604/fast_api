@@ -1,6 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
+from app.api.v1.schemas.education import EducationResponse
+from app.api.v1.schemas.experience import ExperienceResponse
+from app.api.v1.schemas.skill import CVSkillResponse
 from app.models.enum import CVFileType
 
 
@@ -61,5 +64,8 @@ class CVResponse(CVBase):
     CleanText: Optional[str] = None
     Summary: Optional[str] = None
     CreatedAt: datetime
+    skills: List[CVSkillResponse] = []
+    experiences: List[ExperienceResponse] = []
+    educations: List[EducationResponse] = []
 
     model_config = ConfigDict(from_attributes=True)

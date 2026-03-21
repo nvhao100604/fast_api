@@ -10,17 +10,18 @@ api_router.include_router(embedding.router, prefix="/jobembeddings", tags=['Job 
 api_router.include_router(users.router, prefix="/users", tags=['Users'])
 api_router.include_router(auth.router, prefix="/auth", tags=['Auth'])
 api_router.include_router(job.router, prefix="/jobs", tags=['Jobs'])
+api_router.include_router(experience.router, prefix="/experience", tags=['Experience'])
 
 # Public routes (accessible to all users)
 public_router = APIRouter()
 public_router.include_router(cv.public_router, prefix="/cvs", tags=['CV'])
 
 # Private routes (accessible only to authenticated users)
+
 private_router = APIRouter()
 private_router.include_router(cv.private_router, prefix="/cvs", tags=['CV'])
 private_router.include_router(applicant.router, prefix="/applicants", tags=["Applicant Management"])
 private_router.include_router(education.router, prefix="/education", tags=['Education'])
-private_router.include_router(experience.router, prefix="/experience", tags=['Experience'])
 private_router.include_router(skill.router, prefix="/skills", tags=['Skills'])
 
 api_router.include_router(public_router)
