@@ -146,6 +146,8 @@ def run_cv_parsing_task(db: Session, cv_id: int, current_user: User):
 
     try:
         result = file_utils.parse_cv_file(cv_record.FileUrl)
+        print(f"===PARSE RESULT===")
+        print(f"{result}")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
     except Exception as e:
