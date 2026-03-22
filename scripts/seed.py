@@ -16,9 +16,9 @@ CHẠY: python fix_seed.py
 from app.core.database import Base, engine, SessionLocal
 from app.core.security import hash_password
 from app.models.User import User
-from app.models.cv_embedding import CVEmbedding
-from app.models.job import Job, JobEmbedding
-from app.services.embbeding_service import model_service
+# from app.models.cv_embedding import CVEmbedding
+# from app.models.job import Job, JobEmbedding
+# from app.services.embbeding_service import model_service
 
 # ── Import trực tiếp string value thay vì dùng Enum object ──
 # Thay vì: UserRole.ADMIN  (gửi "ADMIN" → lỗi)
@@ -58,7 +58,7 @@ SEED_USERS = [
         "hashed_password": hash_password("App@123456"),
         "role":            "applicant",   # ← chữ thường
         "is_active":       True,
-        "is_verified":     True,
+        "is_verified":     True,    
     },
     {
         "email":           "applicant2@gmail.com",
@@ -164,6 +164,6 @@ def seed_cv_embeddings():
 
 if __name__ == "__main__":
     seed_user()
-    seed_jobs(db, n=50)
-    seed_job_embeddings()
+    # seed_jobs(db, n=50)
+    # seed_job_embeddings()
     db = SessionLocal()
