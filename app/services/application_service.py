@@ -1,6 +1,6 @@
 from typing import List, Tuple
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 from app.models.application import Application, ApplicationHistory, ApplicationStatus
 from app.models.job import JobStatus
@@ -114,3 +114,32 @@ class ApplicationService:
         if not app:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
         return application_crud.get_history_by_application(db, application_id)
+    
+    def get_application_detail_with_auth(db: Session, application_id: int, current_user: User):
+        """
+        Lấy chi tiết đơn ứng tuyển với cơ chế phân quyền:
+        - HR/Admin: Xem được tất cả.
+        - Applicant: Chỉ xem được đơn do chính mình nộp.
+        """
+        # 1. Truy vấn dữ liệu từ CRUD
+        application = application_crud.get_application_by_id(db, application_id)
+
+        # 2. Kiểm tra tồn tại (404 Not Found)
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Đơn ứng tuyển ID {application_id} không tồn tại."
+            )
+
+        # 3. Kiểm tra quyền sở hữu (403 Forbidden)
+        # Nếu là Applicant, Id của họ phải khớp với ApplicantId trong đơn
+        if current_user.role == UserRole.APPLICANT:
+            if application.ApplicantId != current_user.Id:
+                print(f"🚨 Cảnh báo bảo mật: User {current_user.Id} cố gắng truy cập đơn {application_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Bạn không có quyền xem đơn ứng tuyển này."
+                )
+
+        # 4. Nếu vượt qua tất cả, trả về dữ liệu
+        return application

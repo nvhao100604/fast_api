@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # --- API key ---
-    GEMINI_API_KEY: str = "AIzaSyCHr_ul5lww6uESVKWSwQihmfDhWd0NfcY"
+    GEMINI_API_KEY: str = ""
 
     # --- General ---
     PROJECT_NAME: str
