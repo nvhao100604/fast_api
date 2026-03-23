@@ -1,35 +1,48 @@
-from fastapi import APIRouter, logger
-from app.services.embbeding_service import model_service
+from typing import List
+
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from torch import embedding
+from app.api.deps import get_db, get_current_user
+from app.api.v1.schemas.response import ResponseSchema
+
+from app.services.embedding import (
+    model_loaded,
+    generate_cv_embedding,
+    store_cv_embedding,
+    store_job_embedding,
+)
 
 router = APIRouter()
 
 
 @router.get(
     "/info",
-    summary="Get Model Information",
+    summary="Get Model Information And Status",
     description="Get model information such as loaded status and device",
 )
 async def model_info():
-    return {"loaded": model_service.model_loaded(), "device": "cpu"}
+    return {
+        "model_loaded": model_loaded(),
+        "device": "cuda" if model_loaded() else "cpu",
+    }
 
 
-@router.get("/health")
-async def model_health():
-    """Check apakah model sudah loaded"""
-    try:
-        return model_service.health_check()
-    except Exception as e:
-        logger.error(f"Error checking model status: {str(e)}")
-        return False
+@router.post("/cv_embed")
+async def model_embed(cv_id: int, text: str, db: Session = Depends(get_db)):
+    embedding = store_cv_embedding(db=db, cv_id=cv_id, text=text)
+    # if hasattr(embedding, "tolist"):
+    #     embedding = embedding.tolist()
+    print(embedding)
+    return ResponseSchema(
+        success=True,
+        message="CV embedding generated and stored successfully",
+        data={"cv_id": cv_id},
+    )
 
 
-@router.post("/reply")
-async def model_reply(text: str):
-    response = model_service._validate_text(text, "Input")
-    return {"response": response}
-
-@router.post("/embed")
-async def model_embed(text: str):
-    embedding = model_service.generate_cv_embedding(text)
-    return {"embedding": embedding}
-
+# @router.post("/embed_batch")
+# async def model_embed_batch(texts: List[str]):
+#     embeddings = [generate_cv_embedding(text) for text in texts]
+#     return {"embeddings": embeddings}

@@ -1,27 +1,25 @@
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, util
 import torch
 import numpy as np
-from typing import List, Union
+from typing import List, Union, Optional
 import logging
+import threading
 
 logger = logging.getLogger(__name__)
 
 
 class SentenceTransformerClient:
-    """
-    Singleton client cho SentenceTransformer
-    Default model: sentence-transformers/all-MiniLM-L6-v2
-    """
-
     _instance = None
+    _lock = threading.Lock()  # Đảm bảo thread-safe cho Singleton
     _initialized = False
-
-    _model: SentenceTransformer | None = None
+    _model: Optional[SentenceTransformer] = None
     embedding_dimension: int
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
@@ -29,7 +27,14 @@ class SentenceTransformerClient:
             return
 
         try:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            # Tự động chọn thiết bị tốt nhất (CUDA > MPS > CPU)
+            if torch.cuda.is_available():
+                self.device = "cuda"
+            elif torch.backends.mps.is_available():
+                self.device = "mps"
+            else:
+                self.device = "cpu"
+
             self.model_name = model_name
 
             logger.info(f"Loading SentenceTransformer model: {model_name}")
@@ -48,6 +53,8 @@ class SentenceTransformerClient:
             logger.exception("Failed to initialize SentenceTransformerClient")
             raise RuntimeError("SentenceTransformer initialization failed") from e
 
+    # ---------- Health check ----------
+
     @property
     def model(self) -> SentenceTransformer:
         if self._model is None:
@@ -63,17 +70,6 @@ class SentenceTransformerClient:
         convert_to_tensor: bool = False,
         normalize: bool = False,
     ) -> Union[List[float], torch.Tensor]:
-        """
-        Encode một câu text thành embedding
-
-        Args:
-            text: Chuỗi cần encode
-            convert_to_tensor: True -> torch.Tensor
-            normalize: Chuẩn hóa vector (L2 norm)
-
-        Returns:
-            Embedding vector
-        """
         if not isinstance(text, str):
             raise TypeError("encode() expects a single string")
 
@@ -81,9 +77,11 @@ class SentenceTransformerClient:
             text,
             convert_to_tensor=convert_to_tensor,
             normalize_embeddings=normalize,
+            show_progress_bar=False,
         )
 
         if convert_to_tensor:
+            print(f"Generated embedding (tensor): {embedding}")
             return embedding
 
         return embedding.tolist()
@@ -96,18 +94,6 @@ class SentenceTransformerClient:
         convert_to_tensor: bool = False,
         normalize: bool = False,
     ) -> Union[List[List[float]], torch.Tensor]:
-        """
-        Encode nhiều câu text
-
-        Args:
-            texts: Danh sách chuỗi
-            batch_size: Kích thước batch
-            convert_to_tensor: True -> torch.Tensor
-            normalize: Chuẩn hóa vector
-
-        Returns:
-            List embeddings hoặc torch.Tensor
-        """
         if not texts:
             return [] if not convert_to_tensor else torch.empty(0)
 
@@ -116,6 +102,7 @@ class SentenceTransformerClient:
             batch_size=batch_size,
             convert_to_tensor=convert_to_tensor,
             normalize_embeddings=normalize,
+            show_progress_bar=False,
         )
 
         if convert_to_tensor:
@@ -130,25 +117,32 @@ class SentenceTransformerClient:
 
     @staticmethod
     def cosine_similarity(
-        emb1: Union[List[float], np.ndarray],
-        emb2: Union[List[float], np.ndarray],
+        emb1: Union[List[float], np.ndarray, torch.Tensor],
+        emb2: Union[List[float], np.ndarray, torch.Tensor],
     ) -> float:
-        """
-        Tính cosine similarity giữa 2 embeddings
-        Sử dụng sentence-transformers.util.cos_sim
-        """
+        """Tính cosine similarity giữa 2 embeddings"""
 
-        # Convert về torch.Tensor (yêu cầu của util.cos_sim)
-        v1 = torch.tensor(emb1, dtype=torch.float)
-        v2 = torch.tensor(emb2, dtype=torch.float)
+        # Chuyển đổi đầu vào thành Tensor nếu cần
+        v1 = (
+            emb1
+            if isinstance(emb1, torch.Tensor)
+            else torch.tensor(emb1, dtype=torch.float)
+        )
+        v2 = (
+            emb2
+            if isinstance(emb2, torch.Tensor)
+            else torch.tensor(emb2, dtype=torch.float)
+        )
 
         if v1.shape != v2.shape:
-            raise ValueError("Embedding dimensions do not match")
+            raise ValueError(
+                f"Embedding dimensions do not match: {v1.shape} vs {v2.shape}"
+            )
 
-        # cos_sim trả về tensor shape (1, 1)
+        # cos_sim trả về matrix, lấy giá trị đơn lẻ
         score = util.cos_sim(v1, v2)
-
         return float(score.item())
 
-# ---------- Singleton instance ----------
+
+# Khởi tạo instance
 sentence_transformer_client = SentenceTransformerClient()
