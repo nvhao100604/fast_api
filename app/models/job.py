@@ -8,6 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.models.enum import JobStatus, EducationLevel as EducationLevelEnum
+from app.models.application import Application
+
+
 
 if TYPE_CHECKING:
     from app.models.cv import CV
@@ -32,12 +35,22 @@ class Job(Base):
     )
     CreatedAt: Mapped[datetime] = mapped_column(server_default=func.now())
 
+
+# --- Relationships ---
+    applications: Mapped[List["Application"]] = relationship(
+    back_populates="job",
+    cascade="all, delete-orphan")
+
     required_skills: Mapped[List["JobSkill"]] = relationship(
         back_populates="job", 
         cascade="all, delete-orphan")
+    
     match_results: Mapped[List["MatchResult"]] = relationship(back_populates="job")
+
     batches: Mapped[List["ScreeningBatch"]] = relationship(
         back_populates="job", 
         cascade="all, delete-orphan")
+    
+    embeddings: Mapped[List["JobEmbedding"]] = relationship(back_populates="job")
     embeddings: Mapped[List["JobEmbedding"]] = relationship(back_populates="job")
     cvs: Mapped[List["CV"]] = relationship(back_populates="position")

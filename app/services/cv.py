@@ -14,7 +14,7 @@ from app.services import (
     experience as exp_service,
     education as edu_service,
     skill as skill_service,
-    job as job_service
+    job_service
     )
 from app.models.enum import CVFileType, UserRole
 from app.utils import file_handling as file_utils
