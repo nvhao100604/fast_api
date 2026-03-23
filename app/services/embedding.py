@@ -10,6 +10,8 @@ from app.clients.sentence_transformer import sentence_transformer_client
 
 from app.api.v1.schemas.cv_embedding import CVEmbeddingCreate
 from app.crud import embbeding as embedding_crud
+from app.models.job import Job
+from app.models.match_result import MatchResult
 
 
 sentence_transformer_client = sentence_transformer_client
@@ -71,13 +73,12 @@ def store_job_embedding(db: Session, job_id: int, vector: List[float]):
 # Retrieve embedding
 # ------------------------------------------------------------------------------
 def _get_embedding(
-    self, db: Session, model, field: str, value: int, embedding_type: EmbeddingType
+    self, db: Session, model, field: str, value: int
 ):
     try:
         query = select(model).where(
             getattr(model, field) == value,
             model.ModelName == self.model_name,
-            model.EmbeddingType == embedding_type,
         )
         return db.execute(query).scalars().first()
     except Exception as e:

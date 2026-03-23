@@ -5,7 +5,6 @@ from sqlalchemy import String, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Enum as SQLEnum
-from app.models.enum import EmbeddingType
 from app.core.database import Base
 
 if TYPE_CHECKING:
