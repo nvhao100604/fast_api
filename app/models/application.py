@@ -1,6 +1,3 @@
-"""
-Thêm 2 model này vào thư mục app/models/
-"""
 from __future__ import annotations
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime, timezone
