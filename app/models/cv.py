@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.education import Education
     from app.models.cv_embedding import CVEmbedding
     from app.models.match_result import MatchResult
+    from app.models.application import Application
 
 class CV(Base):
     __tablename__ = "CVs"
@@ -46,6 +47,10 @@ class CV(Base):
     )
     embeddings: Mapped[List["CVEmbedding"]] = relationship(
         back_populates="cv", cascade="all, delete-orphan"
+    )
+    match_results: Mapped[List["MatchResult"]] = relationship(back_populates="cv"
+    )
+    applications: Mapped[List["Application"]] = relationship(back_populates="cv"
     )
     position: Mapped[Optional["Job"]] = relationship(back_populates="cvs")
     match_results: Mapped[List["MatchResult"]] = relationship(back_populates="cv")

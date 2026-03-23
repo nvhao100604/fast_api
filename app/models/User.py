@@ -52,7 +52,8 @@ class User(Base):
     cvs = relationship("CV", back_populates="user")
     batches: Mapped[list["ScreeningBatch"]] = relationship(
     back_populates="user"
-)
+    )
+    applications = relationship("Application", back_populates="applicant", foreign_keys="Application.ApplicantId")
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email!r} role={self.role}>"

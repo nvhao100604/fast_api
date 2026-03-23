@@ -149,7 +149,6 @@ def parse_text_with_gemini(raw_text: str) -> dict:
     CV Text:
     {raw_text}
     """
-    print(f"AI MODEL KEY: {settings.GEMINI_API_KEY}")
     response = client.models.generate_content(
         model=ai_model, 
         contents=prompt
