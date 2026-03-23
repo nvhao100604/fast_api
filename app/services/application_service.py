@@ -1,165 +1,116 @@
-from typing import List, Optional, Tuple
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
+from typing import List, Tuple
+from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 from app.models.application import Application, ApplicationHistory, ApplicationStatus
-from app.models.job import Job, JobStatus
-from app.models.cv import CV
+from app.models.job import JobStatus
+from app.crud import application_crud
+from app.crud.job import get_job_by_id
+from app.crud.cv import get_cv_by_id   
 from app.api.v1.schemas.application_schemas import ApplicationCreate, ApplicationStatusUpdate
 
 
 class ApplicationService:
 
-    # ── Nộp CV vào vị trí ────────────────────────────────────────────────────
+    # ── Nộp đơn ứng tuyển ────────────────────────────────────────────────────
     @staticmethod
-    async def apply(
-        db: AsyncSession,
+    def apply(
+        db: Session,
         data: ApplicationCreate,
         applicant_id: int,
     ) -> Application:
         # Kiểm tra job tồn tại và đang mở
-        job = (await db.execute(
-            select(Job).where(Job.Id == data.job_id)
-        )).scalar_one_or_none()
+        job = get_job_by_id(db, data.JobId)
         if not job:
             raise HTTPException(status_code=404, detail="Không tìm thấy job")
         if job.Status != JobStatus.OPEN:
             raise HTTPException(status_code=400, detail="Job này không còn nhận hồ sơ")
 
-        # Kiểm tra CV thuộc về user
-        cv = (await db.execute(
-            select(CV).where(CV.Id == data.cv_id)
-        )).scalar_one_or_none()
+        # Kiểm tra CV tồn tại và thuộc về user
+        cv = get_cv_by_id(db, data.CVId)
         if not cv:
             raise HTTPException(status_code=404, detail="Không tìm thấy CV")
         if cv.UserId != applicant_id:
             raise HTTPException(status_code=403, detail="CV không thuộc về bạn")
 
         # Kiểm tra đã nộp chưa
-        existing = (await db.execute(
-            select(Application).where(
-                Application.JobId == data.job_id,
-                Application.ApplicantId == applicant_id,
-            )
-        )).scalar_one_or_none()
+        existing = application_crud.get_application_by_job_and_applicant(
+            db, data.JobId, applicant_id
+        )
         if existing:
             raise HTTPException(status_code=409, detail="Bạn đã nộp đơn vào vị trí này rồi")
 
-        app = Application(
-            JobId=data.job_id,
-            CVId=data.cv_id,
-            ApplicantId=applicant_id,
-            CoverLetter=data.cover_letter,
-            Status=ApplicationStatus.APPLIED,
+        # Tạo application + ghi history trong 1 transaction
+        app = application_crud.create_application(
+            db,
+            job_id=data.JobId,
+            cv_id=data.CVId,
+            applicant_id=applicant_id,
+            cover_letter=data.CoverLetter,
         )
-        db.add(app)
-        await db.flush()
+        application_crud.create_history_entry(
+            db,
+            application_id=app.Id,
+            status=ApplicationStatus.APPLIED,
+            changed_by_id=applicant_id,
+            note="Nộp đơn ứng tuyển",
+        )
 
-        # Ghi lịch sử
-        db.add(ApplicationHistory(
-            ApplicationId=app.Id,
-            Status=ApplicationStatus.APPLIED,
-            Note="Nộp đơn ứng tuyển",
-            ChangedById=applicant_id,
-        ))
+        return application_crud.get_application_detail(db, app.Id)
 
-        await db.commit()
-        return await ApplicationService._get_application_detail(db, app.Id)
-
-    # ── Lấy lịch sử ứng tuyển của user ───────────────────────────────────────
+    # ── Lịch sử ứng tuyển của user ───────────────────────────────────────────
     @staticmethod
-    async def get_my_applications(
-        db: AsyncSession,
+    def get_my_applications(
+        db: Session,
         applicant_id: int,
         skip: int = 0,
         limit: int = 20,
     ) -> Tuple[List[Application], int]:
-        query = (
-            select(Application)
-            .where(Application.ApplicantId == applicant_id)
-            .options(selectinload(Application.job))
+        return application_crud.get_applications_by_applicant(
+            db, applicant_id, skip=skip, limit=limit
         )
-        total = (await db.execute(
-            select(func.count()).select_from(query.subquery())
-        )).scalar_one()
 
-        result = await db.execute(
-            query.offset(skip).limit(limit).order_by(Application.AppliedAt.desc())
-        )
-        return result.scalars().all(), total
-
-    # ── Lấy chi tiết application ──────────────────────────────────────────────
+    # ── Chi tiết đơn ứng tuyển ───────────────────────────────────────────────
     @staticmethod
-    async def get_application(db: AsyncSession, application_id: int) -> Application:
-        return await ApplicationService._get_application_detail(db, application_id)
+    def get_application(db: Session, application_id: int) -> Application:
+        app = application_crud.get_application_detail(db, application_id)
+        if not app:
+            raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
+        return app
 
-    # ── Cập nhật trạng thái (HR/Admin) ───────────────────────────────────────
+    # ── Cập nhật trạng thái (HR / Admin) ─────────────────────────────────────
     @staticmethod
-    async def update_status(
-        db: AsyncSession,
+    def update_status(
+        db: Session,
         application_id: int,
         data: ApplicationStatusUpdate,
         changed_by_id: int,
     ) -> Application:
-        app = await ApplicationService._get_or_404(db, application_id)
+        app = application_crud.get_application_by_id(db, application_id)
+        if not app:
+            raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
 
-        old_status = app.Status
         new_status = ApplicationStatus(data.status)
-
-        if old_status == new_status:
+        if app.Status == new_status:
             raise HTTPException(status_code=400, detail="Trạng thái không thay đổi")
 
-        app.Status = new_status
+        application_crud.update_application_status(db, application_id, new_status)
+        application_crud.create_history_entry(
+            db,
+            application_id=application_id,
+            status=new_status,
+            changed_by_id=changed_by_id,
+            note=data.note,
+        )
 
-        # Ghi lịch sử
-        db.add(ApplicationHistory(
-            ApplicationId=application_id,
-            Status=new_status,
-            Note=data.note,
-            ChangedById=changed_by_id,
-        ))
+        return application_crud.get_application_detail(db, application_id)
 
-        await db.commit()
-        return await ApplicationService._get_application_detail(db, application_id)
-
-    # ── Lấy lịch sử của 1 application ────────────────────────────────────────
+    # ── Lịch sử trạng thái ───────────────────────────────────────────────────
     @staticmethod
-    async def get_history(
-        db: AsyncSession, application_id: int
+    def get_history(
+        db: Session, application_id: int
     ) -> List[ApplicationHistory]:
-        await ApplicationService._get_or_404(db, application_id)
-        result = await db.execute(
-            select(ApplicationHistory)
-            .where(ApplicationHistory.ApplicationId == application_id)
-            .options(selectinload(ApplicationHistory.changed_by_user))
-            .order_by(ApplicationHistory.ChangedAt)
-        )
-        return result.scalars().all()
-
-    # ── Helpers ───────────────────────────────────────────────────────────────
-    @staticmethod
-    async def _get_or_404(db: AsyncSession, application_id: int) -> Application:
-        app = (await db.execute(
-            select(Application).where(Application.Id == application_id)
-        )).scalar_one_or_none()
+        app = application_crud.get_application_by_id(db, application_id)
         if not app:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
-        return app
-
-    @staticmethod
-    async def _get_application_detail(db: AsyncSession, application_id: int) -> Application:
-        result = await db.execute(
-            select(Application)
-            .where(Application.Id == application_id)
-            .options(
-                selectinload(Application.job),
-                selectinload(Application.applicant),
-                selectinload(Application.history).selectinload(ApplicationHistory.changed_by_user),
-            )
-        )
-        app = result.scalar_one_or_none()
-        if not app:
-            raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
-        return app
+        return application_crud.get_history_by_application(db, application_id)

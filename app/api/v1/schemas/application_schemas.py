@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
@@ -15,9 +15,9 @@ class ApplicationStatusEnum(str, Enum):
 
 # ── Application schemas ───────────────────────────────────────────────────────
 class ApplicationCreate(BaseModel):
-    job_id: int
-    cv_id: int
-    cover_letter: Optional[str] = None
+    JobId: int
+    CVId: int
+    CoverLetter: Optional[str] = None
 
 
 class ApplicationStatusUpdate(BaseModel):
@@ -26,25 +26,26 @@ class ApplicationStatusUpdate(BaseModel):
 
 
 class ApplicationResponse(BaseModel):
-    id: int
-    job_id: int
+    Id: int
+    JobId: int
     job_title: Optional[str] = None
-    cv_id: int
-    applicant_id: int
+    CVId: int
+    ApplicantId: int
     applicant_name: Optional[str] = None
-    status: ApplicationStatusEnum
-    cover_letter: Optional[str] = None
-    applied_at: datetime
-    updated_at: datetime
+    Status: ApplicationStatusEnum
+    CoverLetter: Optional[str] = None
+    AppliedAt: datetime
+    UpdatedAt: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ApplicationHistoryResponse(BaseModel):
-    id: int
-    status: ApplicationStatusEnum
-    note: Optional[str] = None
-    changed_at: datetime
+    Id: int
+    Status: ApplicationStatusEnum
+    Note: Optional[str] = None
+    ChangedAt: datetime
+    ChangedById: Optional[int] = None
     changed_by: Optional[str] = None
 
     model_config = {"from_attributes": True}

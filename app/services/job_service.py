@@ -44,3 +44,6 @@ def get_job_detail(db: Session, job_id: int) -> JobResponse:
 
     return JobResponse.model_validate(job)
 
+def get_job_by_name(db: Session, name: str):
+    return job_crud.get_job_by_name(db, name=name)
+

@@ -37,15 +37,14 @@ async def get_job_detail(
             detail = f"Không tìm thấy job {job_id}"
         )
 
-    return await JobResponse.model_validate(job)
+    return JobResponse.model_validate(job)
 
 
-@router.put("/{job_id}", response_model=JobResponse, summary="Cập nhật thông tin của một job")
+@router.put("/{job_id}", response_model=JobResponse, summary="Cập nhật thông tin của một job", dependencies = [Depends(require_hr_or_admin)])
 async def update_job(
     job_id: int,
     job_data: JobUpdate,
-    db: Session = Depends(get_db),
-    dependencies = [Depends(require_hr_or_admin)]
+    db: Session = Depends(get_db)
 ):
     """Cập nhật thông tin của một job (title, description, requirements_text)."""
     updated_job = job_service.update_job(db, job_id, job_data)

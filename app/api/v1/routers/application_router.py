@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.api.deps import get_current_user, require_applicant, require_hr, require_hr_or_admin
@@ -13,7 +13,7 @@ from app.api.v1.schemas.application_schemas import (
 )
 from app.services.application_service import ApplicationService
 
-router = APIRouter(prefix="/applications", tags=["Applications"])
+router = APIRouter()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -26,12 +26,14 @@ router = APIRouter(prefix="/applications", tags=["Applications"])
     summary="Nộp CV vào vị trí tuyển dụng",
     dependencies=[Depends(require_applicant)]
 )
-async def apply_for_job(
+def apply_for_job(
     data: ApplicationCreate,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await ApplicationService.apply(db, data, applicant_id=current_user.Id)
+    return ApplicationDetailResponse.model_validate(
+        ApplicationService.apply(db, data, applicant_id=current_user.Id)
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -43,13 +45,13 @@ async def apply_for_job(
     summary="Lịch sử ứng tuyển của tôi",
     dependencies=[Depends(require_applicant)]
 )
-async def my_applications(
+def my_applications(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    apps, total = await ApplicationService.get_my_applications(
+    apps, total = ApplicationService.get_my_applications(
         db, applicant_id=current_user.Id, skip=skip, limit=limit
     )
     return {
@@ -68,12 +70,12 @@ async def my_applications(
     response_model=ApplicationDetailResponse,
     summary="Chi tiết đơn ứng tuyển"
 )
-async def get_application(
+def get_application(
     application_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    app = await ApplicationService.get_application(db, application_id)
+    app = ApplicationService.get_application(db, application_id)
     # Ứng viên chỉ xem được đơn của mình; HR/Admin xem được tất cả
     if (
         current_user.role == UserRole.APPLICANT
@@ -93,13 +95,13 @@ async def get_application(
     summary="Cập nhật trạng thái ứng viên (Applied → Shortlisted → Interview → Rejected/Hired)",
     dependencies=[Depends(require_hr)]
 )
-async def update_application_status(
+def update_application_status(
     application_id: int,
     data: ApplicationStatusUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await ApplicationService.update_status(
+    return ApplicationService.update_status(
         db, application_id, data, changed_by_id=current_user.Id
     )
 
@@ -112,10 +114,10 @@ async def update_application_status(
     response_model=list[ApplicationHistoryResponse],
     summary="Lịch sử thay đổi trạng thái",
 )
-async def get_application_history(
+def get_application_history(
     application_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await ApplicationService.get_history(db, application_id)
+    return ApplicationService.get_history(db, application_id)
 

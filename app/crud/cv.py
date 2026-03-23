@@ -37,7 +37,7 @@ def create_cv(db: Session, applicant_id: int, path: str, file_type: Any):
         UserId=applicant_id,
         FileUrl=path,
         FileType=file_type,
-        Position=""
+        #Position=""
     )
     db.add(db_cv)
     db.commit()
