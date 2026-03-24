@@ -6,16 +6,162 @@ from decimal import Decimal
 from typing import List, Optional, Dict, Tuple
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.clients.sentence_transformer import sentence_transformer_client
 
+from app.clients.sentence_transformer import sentence_transformer_client
 from app.api.v1.schemas.cv_embedding import CVEmbeddingCreate
 from app.crud import embbeding as embedding_crud
-from app.models.job import Job
-from app.models.match_result import MatchResult
+from app.crud.cv_skill import get_cv_skills
+from app.crud.job_skill import get_job_skills
+from app.crud.match_result import create_match_result
+from app.services.cv import *
+from app.services.job_service import *
+from app.services.education import *
+from app.models import CVEmbedding, JobEmbedding, MatchResult
 
-
+# ------------------------------------------------------------------------------
+# SentenceTransformerClient instance
+# ------------------------------------------------------------------------------
 sentence_transformer_client = sentence_transformer_client
-logger = logging.getLogger(__name__)
+
+
+def match_job_result_service(
+    db: Session, current_user, cv_id: int, job_id: int
+) -> Dict[str, float]:
+    # Lấy chi tiết CV
+    cv_detail = get_cv_details(db, cv_id, current_user)
+    cv_skill_detail = get_cv_skills(db, cv_detail.Id)
+
+    # Lấy chi tiết Job
+    job_detail = get_job_detail(db, job_id)
+    job_skill_detail = get_job_skills(db, job_detail.Id)
+
+    # Lấy embedding của CV
+    cv_cleantext_embedding_vec = _embedding(cv_detail.CleanText or "")
+    cv_skill_embedding_vec = _embedding(_skills_to_text(cv_skill_detail) or "")
+    cv_experience_level_embedding_vec = _embedding(
+        _experiences_to_text(cv_detail.experiences)
+    )
+    cv_education_level_embedding_vec = _embedding(
+        _educations_to_text(cv_detail.educations)
+    )
+
+    # Lấy embedding của Job
+    job_requirement_embedding_vec = _embedding(job_detail.RequirementsText or "")
+    job_skill_embedding_vec = _embedding(_skills_to_text(job_skill_detail) or "")
+    job_experience_level_embedding_vec = _embedding(str(job_detail.MinExperience or ""))
+    job_education_level_embedding_vec = _embedding(str(job_detail.EducationLevel or ""))
+
+    semantic_match_score = calculate_semantic_similarity(
+        job_requirement_embedding_vec, cv_cleantext_embedding_vec
+    )
+
+    skill_match_score = calculate_semantic_similarity(
+        job_skill_embedding_vec, cv_skill_embedding_vec
+    )
+
+    experience_match_score = calculate_semantic_similarity(
+        job_experience_level_embedding_vec, cv_experience_level_embedding_vec
+    )
+
+    education_match_score = calculate_semantic_similarity(
+        job_education_level_embedding_vec, cv_education_level_embedding_vec
+    )
+
+    final_total_match_result = (
+        semantic_match_score
+        + skill_match_score
+        + experience_match_score
+        + education_match_score
+    ) / 4.0
+
+    store_cv_embedding(db, cv_id, cv_detail.CleanText)
+    store_job_embedding(db, job_id, job_detail.RequirementsText)
+    store_match_result(
+        db,
+        cv_id,
+        job_id,
+        semantic_match_score,
+        skill_match_score,
+        experience_match_score,
+        education_match_score,
+        final_total_match_result,
+    )
+
+    return {
+        "semantic_match": semantic_match_score,
+        "skill_match": skill_match_score,
+        "experience_match": experience_match_score,
+        "education_match": education_match_score,
+        "final_total_match_result": final_total_match_result,
+    }
+
+
+# ------------------------------------------------------------------------------
+# Matching CV and Job Service
+# ------------------------------------------------------------------------------
+def _skills_to_text(skills):
+    if not skills:
+        return ""
+
+    names = []
+    for s in skills:
+        if not s:
+            continue
+        if hasattr(s, "skill") and getattr(s, "skill") is not None:
+            nm = getattr(s.skill, "Name", None)
+            if nm:
+                names.append(str(nm))
+            continue
+        if hasattr(s, "Name"):
+            names.append(str(getattr(s, "Name")))
+            continue
+        if hasattr(s, "SkillId"):
+            names.append(str(getattr(s, "SkillId")))
+            continue
+        names.append(str(s))
+
+    return ", ".join(names)
+
+
+def _experiences_to_text(experiences):
+    if not experiences:
+        return ""
+
+    parts = []
+    for e in experiences:
+        if not e:
+            continue
+
+        company = getattr(e, "Company", "")
+        position = getattr(e, "Position", "")
+        duration = getattr(e, "DurationMonths", "")
+
+        p = " ".join([str(x) for x in [company, position, duration] if x])
+        if p:
+            parts.append(p)
+
+    return " | ".join(parts)
+
+
+def _educations_to_text(educations):
+    if not educations:
+        return ""
+
+    parts = []
+    for edu in educations:
+        if not edu:
+            continue
+
+        degree = getattr(edu, "Degree", "")
+        major = getattr(edu, "Major", "")
+        school = getattr(edu, "School", "")
+        level = getattr(edu, "Level", "")
+
+        p = " ".join([str(x) for x in [degree, major, school, level] if x])
+        if p:
+            parts.append(p)
+
+    return " | ".join(parts)
 
 
 # ------------------------------------------------------------------------------
@@ -35,7 +181,7 @@ def model_loaded() -> bool:
 # ------------------------------------------------------------------------------
 # Embedding generation
 # ------------------------------------------------------------------------------
-def generate_cv_embedding(text: str):
+def _embedding(text: str):
     try:
         print(f"Generating embedding for text: {text[:30]}...")
         return sentence_transformer_client.encode(text, normalize=True)
@@ -48,114 +194,87 @@ def generate_cv_embedding(text: str):
 # Database store
 # ------------------------------------------------------------------------------
 def store_cv_embedding(db: Session, cv_id: int, text: str):
-    return embedding_crud.save_cv_embedding(
-        db,
-        {
-            "CVId": cv_id,
-            "ModelName": sentence_transformer_client.model_name,
-            "Vector": generate_cv_embedding(text),
-        },
-    )
+    try:
+        return embedding_crud.save_cv_embedding(
+            db,
+            {
+                "CVId": cv_id,
+                "ModelName": sentence_transformer_client.model_name,
+                "Vector": _embedding(text),
+            },
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store CV embedding",
+        )
+    finally:
+        db.close()
 
 
-def store_job_embedding(db: Session, job_id: int, vector: List[float]):
-    return embedding_crud.save_job_embedding(
-        db,
-        {
-            "JobId": job_id,
-            "ModelName": sentence_transformer_client.model_name,
-            "Vector": vector,
-        },
-    )
+def store_job_embedding(db: Session, job_id: int, text: str):
+    try:
+        return embedding_crud.save_job_embedding(
+            db,
+            {
+                "JobId": job_id,
+                "ModelName": sentence_transformer_client.model_name,
+                "Vector": _embedding(text),
+            },
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store Job embedding",
+        )
+    finally:
+        db.close()
 
 
-# ------------------------------------------------------------------------------
-# Retrieve embedding
-# ------------------------------------------------------------------------------
-def _get_embedding(
-    self, db: Session, model, field: str, value: int
+def store_match_result(
+    db: Session,
+    cv_id: int,
+    job_id: int,
+    semantic_score: Decimal,
+    skill_score: Decimal,
+    experience_score: Decimal,
+    education_score: Decimal,
+    total_score: Decimal,
 ):
     try:
-        query = select(model).where(
-            getattr(model, field) == value,
-            model.ModelName == self.model_name,
+        return create_match_result(
+            db,
+            CVId=cv_id,
+            JobId=job_id,
+            SemanticScore=Decimal(semantic_score),
+            SkillScore=Decimal(skill_score),
+            ExperienceScore=Decimal(experience_score),
+            EducationScore=Decimal(education_score),
+            TotalScore=Decimal(total_score),
         )
-        return db.execute(query).scalars().first()
     except Exception as e:
-        logger.error(f"Error retrieving embedding: {e}")
-        return None
-
-
-# def get_cv_embedding(self, db: Session, cv_id: int, embedding_type=EmbeddingType.ALL):
-#     return self._get_embedding(db, CVEmbedding, "CVId", cv_id, embedding_type)
-
-
-# def get_job_embedding(self, db: Session, job_id: int, embedding_type=EmbeddingType.ALL):
-#     return self._get_embedding(db, JobEmbedding, "JobId", job_id, embedding_type)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store Match Result",
+        )
+    finally:
+        db.close()
 
 
 # ------------------------------------------------------------------------------
 # Similarity score
 # ------------------------------------------------------------------------------
 def calculate_semantic_similarity(
-    self, cv_vector: List[float], job_vector: List[float]
+    cleantext_vec: List[float], job_vec: List[float]
 ) -> float:
-
     try:
-        raw_score = self.client.cosine_similarity(cv_vector, job_vector)
-        return (raw_score + 1) / 2  # normalize 0–1
+        raw_score = sentence_transformer_client.cosine_similarity(
+            cleantext_vec, job_vec
+        )
+        return raw_score
     except Exception as e:
         logger.error(f"Error calculating similarity: {e}")
         return 0.0
-
-
-# ------------------------------------------------------------------------------
-# Matching
-# ------------------------------------------------------------------------------
-def _save_match_result(
-    self, db: Session, cv_id: int, job_id: int, score: float
-) -> MatchResult:
-
-    try:
-        query = select(MatchResult).where(
-            MatchResult.CVId == cv_id, MatchResult.JobId == job_id
-        )
-        match = db.execute(query).scalars().first()
-
-        score_decimal = Decimal(str(round(score, 4)))
-
-        if match:  # update existing
-            match.SemanticScore = score_decimal
-            match.EvaluatedAt = datetime.now(timezone.utc)
-        else:  # create new
-            match = MatchResult(CVId=cv_id, JobId=job_id, SemanticScore=score_decimal)
-            db.add(match)
-
-        db.commit()
-        db.refresh(match)
-        return match
-
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error saving match result: {e}")
-        raise
-
-
-def match_cv_with_job(
-    self, db: Session, cv_id: int, job_id: int
-) -> Optional[Tuple[float, MatchResult]]:
-
-    cv_emb = self.get_cv_embedding(db, cv_id)
-    job_emb = self.get_job_embedding(db, job_id)
-
-    if not cv_emb or not job_emb:
-        logger.warning(f"Missing embedding for CV {cv_id} or Job {job_id}")
-        return None
-
-    score = self.calculate_semantic_similarity(cv_emb.Vector, job_emb.Vector)
-    match_result = self._save_match_result(db, cv_id, job_id, score)
-
-    return score, match_result
 
 
 # ------------------------------------------------------------------------------
@@ -186,40 +305,3 @@ def batch_match_cv_with_jobs(
             pass
 
     return result
-
-
-# ------------------------------------------------------------------------------
-# Ranking
-# ------------------------------------------------------------------------------
-def get_top_matching_jobs(self, db: Session, cv_id: int, limit: int = 10) -> List[Dict]:
-
-    try:
-        query = (
-            select(MatchResult)
-            .where(MatchResult.CVId == cv_id)
-            .order_by(MatchResult.SemanticScore.desc())
-            .limit(limit)
-        )
-
-        matches = db.execute(query).scalars().all()
-        results = []
-
-        for m in matches:
-            job = db.execute(select(Job).where(Job.Id == m.JobId)).scalars().first()
-            if not job:
-                continue
-
-            results.append(
-                {
-                    "job_id": job.Id,
-                    "job_title": job.Title,
-                    "semantic_score": float(m.SemanticScore or 0),
-                    "total_score": float(m.TotalScore or 0),
-                }
-            )
-
-        return results
-
-    except Exception as e:
-        logger.error(f"Error fetching top jobs: {e}")
-        return []
