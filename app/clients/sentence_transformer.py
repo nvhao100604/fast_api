@@ -106,6 +106,7 @@ class SentenceTransformerClient:
         )
 
         if convert_to_tensor:
+            print(f"Generated batch embeddings (tensor): {embeddings.shape}")
             return embeddings
 
         return embeddings.tolist()
