@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.routers import applicant, cv, education, experience, health, skill, users, auth, embedding
+from app.api.v1.routers import applicant, cv, education, experience, health, job, skill, users, auth, embedding
 
 api_router = APIRouter()
 
@@ -9,6 +9,7 @@ api_router.include_router(embedding.router, prefix="/jobembeddings", tags=['Job 
 api_router.include_router(users.router, prefix="/users", tags=['Users'])
 api_router.include_router(auth.router, prefix="/auth", tags=['Auth'])
 api_router.include_router(experience.router, prefix="/experience", tags=['Experience'])
+api_router.include_router(job.router, prefix="/jobs", tags=['Job'])
 
 # Public routes (accessible to all users)
 public_router = APIRouter()

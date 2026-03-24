@@ -2,7 +2,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from typing import List
 from app.api.v1.schemas.cv import CVResponse
-from app.models.enum import EmbeddingType as EmbeddingEnum
 
 # Schema cơ sở cho Embedding
 class CVEmbeddingBase(BaseModel):
@@ -10,7 +9,6 @@ class CVEmbeddingBase(BaseModel):
     ModelName: str = Field(..., max_length=100)
     # Vector 384 chiều thường thấy ở các model Sentence Transformers
     Vector: List[float] = Field(..., min_length=384, max_length=384)
-    EmbeddingType: EmbeddingEnum = EmbeddingEnum.ALL
 
 # Schema dùng để tạo mới Embedding 
 class CVEmbeddingCreate(CVEmbeddingBase):
