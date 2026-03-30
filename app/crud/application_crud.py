@@ -1,98 +1,53 @@
-from typing import List, Optional, Tuple
-from sqlalchemy.orm import Session, selectinload
-from sqlalchemy import select, func
+from typing import List, Optional
+from sqlalchemy.orm import Session
 
 from app.models.application import Application, ApplicationHistory, ApplicationStatus
-from app.api.v1.schemas.application_schemas import ApplicationCreate
 
 
 # ── Application ───────────────────────────────────────────────────────────────
 
 def get_application_by_id(db: Session, application_id: int) -> Optional[Application]:
-    return db.execute(
-        select(Application).where(Application.Id == application_id)
-    ).scalar_one_or_none()
+    return db.query(Application).filter(Application.Id == application_id).first()
 
 
 def get_application_detail(db: Session, application_id: int) -> Optional[Application]:
     """Lấy application kèm đầy đủ relationships."""
-    return db.execute(
-        select(Application)
-        .where(Application.Id == application_id)
-        .options(
-            selectinload(Application.job),
-            selectinload(Application.applicant),
-            selectinload(Application.cv),
-            selectinload(Application.history).selectinload(
-                ApplicationHistory.changed_by_user
-            ),
-        )
-    ).scalar_one_or_none()
+    return db.query(Application).filter(Application.Id == application_id).first()
 
 
 def get_application_by_job_and_applicant(
     db: Session, job_id: int, applicant_id: int
 ) -> Optional[Application]:
     """Kiểm tra ứng viên đã nộp vào job này chưa."""
-    return db.execute(
-        select(Application).where(
-            Application.JobId == job_id,
-            Application.ApplicantId == applicant_id,
-        )
-    ).scalar_one_or_none()
+    return db.query(Application).filter(
+        Application.JobId == job_id,
+        Application.ApplicantId == applicant_id,
+    ).first()
 
 
-def get_applications_by_applicant(
-    db: Session,
-    applicant_id: int,
-    skip: int = 0,
-    limit: int = 20,
-) -> Tuple[List[Application], int]:
-    """Lấy danh sách đơn ứng tuyển của 1 user."""
-    query = (
-        select(Application)
-        .where(Application.ApplicantId == applicant_id)
-        .options(selectinload(Application.job))
-    )
-    total = db.execute(
-        select(func.count()).select_from(query.subquery())
-    ).scalar_one()
-
-    apps = db.execute(
-        query.offset(skip).limit(limit).order_by(Application.AppliedAt.desc())
-    ).scalars().all()
-
-    return apps, total
+# def get_applications_by_applicant(
+#     db: Session,
+#     applicant_id: int,
+# ) -> List[Application]:
+#     """Lấy danh sách đơn ứng tuyển của 1 user."""
+#     return (
+#         db.query(Application)
+#         .filter(Application.ApplicantId == applicant_id)
+#         .order_by(Application.AppliedAt.desc())
+#         .all()
+#     )
 
 
 def get_applications_by_job(
     db: Session,
     job_id: int,
     status: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 20,
-) -> Tuple[List[Application], int]:
+) -> List[Application]:
     """Lấy danh sách ứng viên theo job (cho HR)."""
-    query = (
-        select(Application)
-        .where(Application.JobId == job_id)
-        .options(
-            selectinload(Application.applicant),
-            selectinload(Application.cv),
-        )
-    )
+    query = db.query(Application).filter(Application.JobId == job_id)
     if status:
-        query = query.where(Application.Status == status)
-
-    total = db.execute(
-        select(func.count()).select_from(query.subquery())
-    ).scalar_one()
-
-    apps = db.execute(
-        query.offset(skip).limit(limit).order_by(Application.AppliedAt.desc())
-    ).scalars().all()
-
-    return apps, total
+        query = query.filter(Application.Status == status)
+    return query.order_by(Application.AppliedAt.desc()).all()
 
 
 def create_application(
@@ -126,7 +81,7 @@ def update_application_status(
     try:
         app = get_application_by_id(db, application_id)
         if not app:
-            raise ValueError("Application not found")
+            raise ValueError("Không tìm thấy")
         app.Status = new_status
         db.commit()
         db.refresh(app)
@@ -166,9 +121,9 @@ def create_history_entry(
 def get_history_by_application(
     db: Session, application_id: int
 ) -> List[ApplicationHistory]:
-    return db.execute(
-        select(ApplicationHistory)
-        .where(ApplicationHistory.ApplicationId == application_id)
-        .options(selectinload(ApplicationHistory.changed_by_user))
+    return (
+        db.query(ApplicationHistory)
+        .filter(ApplicationHistory.ApplicationId == application_id)
         .order_by(ApplicationHistory.ChangedAt)
-    ).scalars().all()
+        .all()
+    )
