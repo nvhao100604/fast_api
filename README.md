@@ -27,12 +27,11 @@ venv\Scripts\activate
 # Kích hoạt venv (Linux/Mac)
 source venv/bin/activate
 ```
-
 ### Cài đặt thư viện
 
 ```bash
 # Cài đặt toàn bộ thư viện từ file requirements
-pip install -r requirements.txt
+pip install -r requirement.txt
 
 # Cài đặt thủ công các thư viện cốt lõi nếu cần
 pip install fastapi[all] uvicorn sentence-transformers pgvector

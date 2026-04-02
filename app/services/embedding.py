@@ -7,7 +7,7 @@ from typing import List, Optional, Dict, Tuple
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.clients.sentence_transformer import sentence_transformer_client
+from app.clients.sentence_transformer import get_sentence_transformer
 from app.api.v1.schemas.cv_embedding import CVEmbeddingCreate
 from app.crud import embbeding as embedding_crud
 from app.crud.cv_skill import get_cv_skills
@@ -21,8 +21,6 @@ from app.models import CVEmbedding, JobEmbedding, MatchResult
 # ------------------------------------------------------------------------------
 # SentenceTransformerClient instance
 # ------------------------------------------------------------------------------
-sentence_transformer_client = sentence_transformer_client
-
 
 def match_job_result_service(
     db: Session, current_user, cv_id: int, job_id: int
@@ -171,9 +169,9 @@ def model_loaded() -> bool:
     try:
         print("Checking model load status...")
         print(
-            f"SentenceTransformerClient instance: {sentence_transformer_client.model}"
+            f"SentenceTransformerClient instance: {get_sentence_transformer().model}"
         )
-        return sentence_transformer_client.model is not None
+        return get_sentence_transformer().model is not None
     except Exception:
         return False
 
@@ -184,7 +182,7 @@ def model_loaded() -> bool:
 def _embedding(text: str):
     try:
         print(f"Generating embedding for text: {text[:30]}...")
-        return sentence_transformer_client.encode(text, normalize=True)
+        return get_sentence_transformer().encode(text, normalize=True)
     except Exception as e:
         logger.exception("Error generating CV embedding")
         raise
@@ -199,7 +197,7 @@ def store_cv_embedding(db: Session, cv_id: int, text: str):
             db,
             {
                 "CVId": cv_id,
-                "ModelName": sentence_transformer_client.model_name,
+                "ModelName": get_sentence_transformer().model_name,
                 "Vector": _embedding(text),
             },
         )
@@ -218,7 +216,7 @@ def store_job_embedding(db: Session, job_id: int, text: str):
             db,
             {
                 "JobId": job_id,
-                "ModelName": sentence_transformer_client.model_name,
+                "ModelName": get_sentence_transformer().model_name,
                 "Vector": _embedding(text),
             },
         )
@@ -268,7 +266,7 @@ def calculate_semantic_similarity(
     cleantext_vec: List[float], job_vec: List[float]
 ) -> float:
     try:
-        raw_score = sentence_transformer_client.cosine_similarity(
+        raw_score = get_sentence_transformer().cosine_similarity(
             cleantext_vec, job_vec
         )
         return raw_score

@@ -29,9 +29,6 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     MODEL_NAME: str = "all-MiniLM-L6-v2" 
 
-
-
-
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
