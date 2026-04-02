@@ -1,7 +1,9 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
+
+from app.models import User, UserRole
 from app.models.application import Application, ApplicationHistory, ApplicationStatus
 from app.models.job import JobStatus
 from app.crud import application_crud
@@ -10,15 +12,11 @@ from app.crud.cv import get_cv_by_id
 from app.api.v1.schemas.application_schemas import ApplicationCreate, ApplicationStatusUpdate
 
 
-class ApplicationService:
-
-    # ── Nộp đơn ứng tuyển ────────────────────────────────────────────────────
-    @staticmethod
-    def apply(
-        db: Session,
-        data: ApplicationCreate,
-        applicant_id: int,
-    ) -> Application:
+def apply(
+    db: Session,
+    data: ApplicationCreate,
+    applicant_id: int,
+) -> Application:
         # Kiểm tra job tồn tại và đang mở
         job = get_job_by_id(db, data.JobId)
         if not job:
@@ -59,63 +57,71 @@ class ApplicationService:
         return application_crud.get_application_detail(db, app.Id)
 
     # ── Lịch sử ứng tuyển của user ───────────────────────────────────────────
-    @staticmethod
-    def get_my_applications(
-        db: Session,
-        applicant_id: int,
-        skip: int = 0,
-        limit: int = 20,
-    ) -> Tuple[List[Application], int]:
-        return application_crud.get_applications_by_applicant(
-            db, applicant_id, skip=skip, limit=limit
-        )
+
+def get_my_applications(
+    db: Session,
+    applicant_id: int,
+    skip: int = 0,
+    limit: int = 20,
+) -> Tuple[List[Application], int]:
+    return application_crud.get_applications_by_applicant(
+        db, applicant_id, skip=skip, limit=limit
+    )
 
     # ── Chi tiết đơn ứng tuyển ───────────────────────────────────────────────
-    @staticmethod
-    def get_application(db: Session, application_id: int) -> Application:
-        app = application_crud.get_application_detail(db, application_id)
-        if not app:
-            raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
-        return app
+  
+def get_application(db: Session, application_id: int) -> Application:
+    app = application_crud.get_application_by_id(db, application_id)
+    if not app:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
+    return app
 
-    # ── Cập nhật trạng thái (HR / Admin) ─────────────────────────────────────
-    @staticmethod
-    def update_status(
-        db: Session,
-        application_id: int,
-        data: ApplicationStatusUpdate,
-        changed_by_id: int,
-    ) -> Application:
-        app = application_crud.get_application_by_id(db, application_id)
-        if not app:
-            raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
+    # ── Xem & Cập nhật trạng thái (HR / Admin) ─────────────────────────────────────
+def get_applications_by_job(
+    db: Session,
+    job_id: int,
+    app_status: Optional[str] = None,
+) -> List[Application]:
+    job = get_job_by_id(db, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Không tìm thấy job")
+    return application_crud.get_applications_by_job(db, job_id, status=app_status)
 
-        new_status = ApplicationStatus(data.status)
-        if app.Status == new_status:
-            raise HTTPException(status_code=400, detail="Trạng thái không thay đổi")
+def update_status(
+    db: Session,
+    application_id: int,
+    data: ApplicationStatusUpdate,
+    changed_by_id: int,
+) -> Application:
+    app = application_crud.get_application_by_id(db, application_id)
+    if not app:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
+    new_status = ApplicationStatus(data.status)
+    if app.Status == new_status:
+       raise HTTPException(status_code=400, detail="Trạng thái không thay đổi")
 
-        application_crud.update_application_status(db, application_id, new_status)
-        application_crud.create_history_entry(
-            db,
-            application_id=application_id,
-            status=new_status,
-            changed_by_id=changed_by_id,
-            note=data.note,
-        )
-
-        return application_crud.get_application_detail(db, application_id)
+    application_crud.update_application_status(db, application_id, new_status)
+    application_crud.create_history_entry(
+        db,
+        application_id=application_id,
+        status=new_status,
+        changed_by_id=changed_by_id,
+        note=data.note,
+    )
+    return application_crud.get_application_detail(db, application_id)
 
     # ── Lịch sử trạng thái ───────────────────────────────────────────────────
-    @staticmethod
-    def get_history(
-        db: Session, application_id: int
-    ) -> List[ApplicationHistory]:
-        app = application_crud.get_application_by_id(db, application_id)
-        if not app:
-            raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
-        return application_crud.get_history_by_application(db, application_id)
+
+def get_history(
+     db: Session, application_id: int
+) -> List[ApplicationHistory]:
+    app = application_crud.get_application_by_id(db, application_id)
+    if not app:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đơn ứng tuyển")
+    return application_crud.get_history_by_application(db, application_id)
     
-    def get_application_detail_with_auth(db: Session, application_id: int, current_user: User):
+
+def get_application_detail_with_auth(db: Session, application_id: int, current_user: User):
         """
         Lấy chi tiết đơn ứng tuyển với cơ chế phân quyền:
         - HR/Admin: Xem được tất cả.
@@ -135,7 +141,6 @@ class ApplicationService:
         # Nếu là Applicant, Id của họ phải khớp với ApplicantId trong đơn
         if current_user.role == UserRole.APPLICANT:
             if application.ApplicantId != current_user.Id:
-                print(f"🚨 Cảnh báo bảo mật: User {current_user.Id} cố gắng truy cập đơn {application_id}")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Bạn không có quyền xem đơn ứng tuyển này."

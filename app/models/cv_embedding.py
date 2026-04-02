@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
 from app.core.database import Base
 from sqlalchemy import Enum as SQLEnum
-from app.models.enum import EmbeddingType
 
 if TYPE_CHECKING:
     from app.models.cv import CV

@@ -28,10 +28,6 @@ class BatchStatus(enum.Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
-class EmbeddingType(enum.Enum):
-    ALL = "all"
-
-
 class UserRole(str , enum.Enum):
     HR = "hr"
     APPLICANT = "applicant"
