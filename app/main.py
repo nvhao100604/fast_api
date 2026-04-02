@@ -6,8 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 print("DB =", get_settings().POSTGRES_DB)
 
-
-
 def create_app() -> FastAPI:
     settings = get_settings()
 
