@@ -16,6 +16,7 @@ CHẠY: python fix_seed.py
 from app.core.database import Base, engine, SessionLocal
 from app.core.security import hash_password
 from app.models.User import User
+
 # from app.models.cv_embedding import CVEmbedding
 # from app.models.job import Job, JobEmbedding
 # from app.services.embbeding_service import model_service
@@ -25,60 +26,61 @@ from app.models.User import User
 # Dùng  : "admin"          (gửi "admin" → đúng)
 SEED_USERS = [
     {
-        "email":           "admin@cvsystem.com",
-        "full_name":       "System Admin",
-        "phone":           "0900000000",
+        "email": "admin@cvsystem.com",
+        "full_name": "System Admin",
+        "phone": "0900000000",
         "hashed_password": hash_password("Admin@123456"),
-        "role":            "admin",       # ← chữ thường
-        "is_active":       True,
-        "is_verified":     True,
+        "role": "admin",  # ← chữ thường
+        "is_active": True,
+        "is_verified": True,
     },
     {
-        "email":           "hr1@cvsystem.com",
-        "full_name":       "HR Manager 1",
-        "phone":           "0901111111",
+        "email": "hr1@cvsystem.com",
+        "full_name": "HR Manager 1",
+        "phone": "0901111111",
         "hashed_password": hash_password("Hr@123456"),
-        "role":            "hr",          # ← chữ thường
-        "is_active":       True,
-        "is_verified":     True,
+        "role": "hr",  # ← chữ thường
+        "is_active": True,
+        "is_verified": True,
     },
     {
-        "email":           "hr2@cvsystem.com",
-        "full_name":       "HR Manager 2",
-        "phone":           "0902222222",
+        "email": "hr2@cvsystem.com",
+        "full_name": "HR Manager 2",
+        "phone": "0902222222",
         "hashed_password": hash_password("Hr@123456"),
-        "role":            "hr",
-        "is_active":       True,
-        "is_verified":     True,
+        "role": "hr",
+        "is_active": True,
+        "is_verified": True,
     },
     {
-        "email":           "applicant1@gmail.com",
-        "full_name":       "Nguyen Van An",
-        "phone":           "0911111111",
+        "email": "applicant1@gmail.com",
+        "full_name": "Nguyen Van An",
+        "phone": "0911111111",
         "hashed_password": hash_password("App@123456"),
-        "role":            "applicant",   # ← chữ thường
-        "is_active":       True,
-        "is_verified":     True,    
+        "role": "applicant",  # ← chữ thường
+        "is_active": True,
+        "is_verified": True,
     },
     {
-        "email":           "applicant2@gmail.com",
-        "full_name":       "Tran Thi Binh",
-        "phone":           "0922222222",
+        "email": "applicant2@gmail.com",
+        "full_name": "Tran Thi Binh",
+        "phone": "0922222222",
         "hashed_password": hash_password("App@123456"),
-        "role":            "applicant",
-        "is_active":       True,
-        "is_verified":     False,
+        "role": "applicant",
+        "is_active": True,
+        "is_verified": False,
     },
     {
-        "email":           "applicant3@gmail.com",
-        "full_name":       "Le Van Cuong",
-        "phone":           "0933333333",
+        "email": "applicant3@gmail.com",
+        "full_name": "Le Van Cuong",
+        "phone": "0933333333",
         "hashed_password": hash_password("App@123456"),
-        "role":            "applicant",
-        "is_active":       False,
-        "is_verified":     True,
+        "role": "applicant",
+        "is_active": False,
+        "is_verified": True,
     },
 ]
+
 
 def seed_user():
     print("Tao bang DB...")
@@ -111,6 +113,7 @@ def seed_user():
     finally:
         db.close()
 
+
 def seed_jobs(db, csv_path="../fake_job_postings.csv"):
     import csv
     from app.models.job import Job
@@ -122,11 +125,11 @@ def seed_jobs(db, csv_path="../fake_job_postings.csv"):
     #   cột 8  (index 7)  → RequirementsText
     #   cột 14 (index 13) → MinExperience  ← tạm để trống (dữ liệu đang là text)
     #   cột 15 (index 14) → (chưa dùng, placeholder)
-    COL_TITLE        = 1
-    COL_DESC         = 6
+    COL_TITLE = 1
+    COL_DESC = 6
     COL_REQUIREMENTS = 7
-    COL_MIN_EXP      = 13  # TODO: đổi kiểu dữ liệu trước khi dùng
-    COL_EXTRA        = 14
+    COL_MIN_EXP = 13  # TODO: đổi kiểu dữ liệu trước khi dùng
+    COL_EXTRA = 14
 
     jobs = []
 
@@ -142,43 +145,44 @@ def seed_jobs(db, csv_path="../fake_job_postings.csv"):
                 Title=row[COL_TITLE].strip() or None,
                 Description=row[COL_DESC].strip() or None,
                 RequirementsText=row[COL_REQUIREMENTS].strip() or None,
-                MinExperience=None,              # TODO: cột 14 đang là text, chưa map
+                MinExperience=None,  # TODO: cột 14 đang là text, chưa map
                 EducationLevel=list(EducationLevel)[0],  # placeholder
-                Status=list(JobStatus)[0],               # placeholder
+                Status=list(JobStatus)[0],  # placeholder
             )
             jobs.append(job)
 
     db.add_all(jobs)
     db.commit()
 
-    print(f"✅ Seeded {n} jobs")
+    print(f"✅ Seeded {len(jobs)} jobs")
+
 
 def seed_job_embeddings():
     try:
         db = SessionLocal()
-        
-        
+
         db.commit()
-    except Exception as e:       
-        db.rollback() 
+    except Exception as e:
+        db.rollback()
         print(f"Loi: {e}")
     finally:
         db.close()
-        
+
+
 def seed_cv_embeddings():
     try:
         db = SessionLocal()
-        
-        
+
         db.commit()
-    except Exception as e:       
-        db.rollback() 
+    except Exception as e:
+        db.rollback()
         print(f"Loi: {e}")
     finally:
-        db.close()        
+        db.close()
+
 
 if __name__ == "__main__":
     seed_user()
-    # seed_jobs(db, n=50)
     # seed_job_embeddings()
     db = SessionLocal()
+    seed_jobs(db)

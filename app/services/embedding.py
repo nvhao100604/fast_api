@@ -22,6 +22,7 @@ from app.models import CVEmbedding, JobEmbedding, MatchResult
 # SentenceTransformerClient instance
 # ------------------------------------------------------------------------------
 
+
 def match_job_result_service(
     db: Session, current_user, cv_id: int, job_id: int
 ) -> Dict[str, float]:
@@ -168,9 +169,7 @@ def _educations_to_text(educations):
 def model_loaded() -> bool:
     try:
         print("Checking model load status...")
-        print(
-            f"SentenceTransformerClient instance: {get_sentence_transformer().model}"
-        )
+        print(f"SentenceTransformerClient instance: {get_sentence_transformer().model}")
         return get_sentence_transformer().model is not None
     except Exception:
         return False
@@ -206,8 +205,6 @@ def store_cv_embedding(db: Session, cv_id: int, text: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to store CV embedding",
         )
-    finally:
-        db.close()
 
 
 def store_job_embedding(db: Session, job_id: int, text: str):
@@ -225,8 +222,6 @@ def store_job_embedding(db: Session, job_id: int, text: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to store Job embedding",
         )
-    finally:
-        db.close()
 
 
 def store_match_result(
@@ -255,8 +250,6 @@ def store_match_result(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to store Match Result",
         )
-    finally:
-        db.close()
 
 
 # ------------------------------------------------------------------------------
@@ -266,9 +259,7 @@ def calculate_semantic_similarity(
     cleantext_vec: List[float], job_vec: List[float]
 ) -> float:
     try:
-        raw_score = get_sentence_transformer().cosine_similarity(
-            cleantext_vec, job_vec
-        )
+        raw_score = get_sentence_transformer().cosine_similarity(cleantext_vec, job_vec)
         return raw_score
     except Exception as e:
         logger.error(f"Error calculating similarity: {e}")
