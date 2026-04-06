@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from torch import embedding
 from app.api.deps import get_db, get_current_user
 from app.api.v1.schemas.response import ResponseSchema
-from app.services import cv as cv_service
 
 from app.services.embedding import *
 from app.services.cv import *
@@ -31,7 +30,7 @@ async def model_info():
 
 
 @router.post(
-    "/validate_match",
+    "/execute",
     summary="Validate CV-Job Match",
     description="Calculate and validate the semantic similarity between a CV and a Job posting",
 )

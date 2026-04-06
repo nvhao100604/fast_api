@@ -1,5 +1,5 @@
 import logging
-from fastapi import HTTPException, status
+from fastapi import HTTPException, logger, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -19,7 +19,7 @@ from app.services.education import *
 from app.models import CVEmbedding, JobEmbedding, MatchResult
 
 # ------------------------------------------------------------------------------
-# SentenceTransformerClient instance
+# Matching CV and Job Service
 # ------------------------------------------------------------------------------
 
 
@@ -34,44 +34,43 @@ def match_job_result_service(
     job_detail = get_job_detail(db, job_id)
     job_skill_detail = get_job_skills(db, job_detail.Id)
 
+    print(f"CV Detail: {cv_detail}")
+    print(f"Job Detail: {job_detail}")
+
     # Lấy embedding của CV
-    cv_cleantext_embedding_vec = _embedding(cv_detail.CleanText or "")
+    cv_cleantext_embedding_vec = _embedding((cv_detail.CleanText + " " + cv_detail.Summary) or "")
     cv_skill_embedding_vec = _embedding(_skills_to_text(cv_skill_detail) or "")
     cv_experience_level_embedding_vec = _embedding(
-        _experiences_to_text(cv_detail.experiences)
+        _experiences_to_text(cv_detail.experiences) or ""
     )
     cv_education_level_embedding_vec = _embedding(
-        _educations_to_text(cv_detail.educations)
+        _educations_to_text(cv_detail.educations) or ""
     )
 
+    print(f"CV CleanText Embedding: {cv_cleantext_embedding_vec[:5]}...")
+    print(f"CV Skill Embedding: {cv_skill_embedding_vec[:5]}...")
+    print(f"CV Experience Embedding: {cv_experience_level_embedding_vec[:5]}...")
+    print(f"CV Education Embedding: {cv_education_level_embedding_vec[:5]}...")
+
     # Lấy embedding của Job
-    job_requirement_embedding_vec = _embedding(job_detail.RequirementsText or "")
+    job_requirement_embedding_vec = _embedding((job_detail.RequirementsText + " " + job_detail.Description) or "")
     job_skill_embedding_vec = _embedding(_skills_to_text(job_skill_detail) or "")
     job_experience_level_embedding_vec = _embedding(str(job_detail.MinExperience or ""))
     job_education_level_embedding_vec = _embedding(str(job_detail.EducationLevel or ""))
 
-    semantic_match_score = calculate_semantic_similarity(
-        job_requirement_embedding_vec, cv_cleantext_embedding_vec
-    )
+    print(f"Job Requirement Embedding: {job_requirement_embedding_vec[:5]}...")
+    print(f"Job Skill Embedding: {job_skill_embedding_vec[:5]}...")
+    print(f"Job Experience Embedding: {job_experience_level_embedding_vec[:5]}...")
+    print(f"Job Education Embedding: {job_education_level_embedding_vec[:5]}...")
 
-    skill_match_score = calculate_semantic_similarity(
-        job_skill_embedding_vec, cv_skill_embedding_vec
-    )
-
-    experience_match_score = calculate_semantic_similarity(
-        job_experience_level_embedding_vec, cv_experience_level_embedding_vec
-    )
-
-    education_match_score = calculate_semantic_similarity(
-        job_education_level_embedding_vec, cv_education_level_embedding_vec
-    )
+    semantic_match_score = calculate_semantic_similarity(job_requirement_embedding_vec, cv_cleantext_embedding_vec)
+    skill_match_score = calculate_semantic_similarity(job_skill_embedding_vec, cv_skill_embedding_vec)
+    experience_match_score = calculate_semantic_similarity(job_experience_level_embedding_vec, cv_experience_level_embedding_vec)
+    education_match_score = calculate_semantic_similarity(job_education_level_embedding_vec, cv_education_level_embedding_vec)
 
     final_total_match_result = (
-        semantic_match_score
-        + skill_match_score
-        + experience_match_score
-        + education_match_score
-    ) / 4.0
+        0.45 * semantic_match_score + 0.35 * skill_match_score + 0.15 * experience_match_score + 0.05 * education_match_score
+    ) or Decimal(0) 
 
     store_cv_embedding(db, cv_id, cv_detail.CleanText)
     store_job_embedding(db, job_id, job_detail.RequirementsText)
@@ -80,10 +79,10 @@ def match_job_result_service(
         cv_id,
         job_id,
         semantic_match_score,
-        skill_match_score,
-        experience_match_score,
-        education_match_score,
-        final_total_match_result,
+        skill_match_score or Decimal(0),
+        experience_match_score or Decimal(0),
+        education_match_score or Decimal(0),
+        final_total_match_result or Decimal(0),
     )
 
     return {
@@ -95,9 +94,6 @@ def match_job_result_service(
     }
 
 
-# ------------------------------------------------------------------------------
-# Matching CV and Job Service
-# ------------------------------------------------------------------------------
 def _skills_to_text(skills):
     if not skills:
         return ""
@@ -192,6 +188,7 @@ def _embedding(text: str):
 # ------------------------------------------------------------------------------
 def store_cv_embedding(db: Session, cv_id: int, text: str):
     try:
+        print(f"Storing CV embedding for CV ID {cv_id}...")
         return embedding_crud.save_cv_embedding(
             db,
             {
@@ -201,6 +198,7 @@ def store_cv_embedding(db: Session, cv_id: int, text: str):
             },
         )
     except Exception as e:
+        logger.exception("Error storing CV embedding")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to store CV embedding",
@@ -209,6 +207,7 @@ def store_cv_embedding(db: Session, cv_id: int, text: str):
 
 def store_job_embedding(db: Session, job_id: int, text: str):
     try:
+        print(f"Storing Job embedding for Job ID {job_id}...")
         return embedding_crud.save_job_embedding(
             db,
             {
@@ -235,6 +234,7 @@ def store_match_result(
     total_score: Decimal,
 ):
     try:
+        print(f"Stored match result for CV ID {cv_id} and Job ID {job_id} successfully")
         return create_match_result(
             db,
             CVId=cv_id,
