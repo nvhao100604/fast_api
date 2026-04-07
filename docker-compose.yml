@@ -1,21 +1,21 @@
 version: '3.8'
 
 services:
-  # Dịch vụ Database
+  # Dịch vụ Cơ sở dữ liệu (Database Service)
   db:
     image: ankane/pgvector
     container_name: postgres_db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: cv_evaluator_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+      POSTGRES_DB: ${POSTGRES_DB:-cv_evaluator_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # Dịch vụ FastAPI App
+  # Dịch vụ Backend (FastAPI App)
   web:
     build: .
     container_name: fastapi_app
@@ -25,8 +25,9 @@ services:
     volumes:
       - .:/app
     environment:
-      # Chú ý: Host của DB lúc này là tên service "db"
-      - DATABASE_URL=postgresql://postgres:123456@db:5432/cv_evaluator_db
+      # Chuẩn hóa Hostname về tên service "db"
+      - POSTGRES_SERVER=db
+      - DATABASE_URL=postgresql+psycopg2://postgres:123456@db:5432/cv_evaluator_db
     depends_on:
       - db
 
