@@ -13,6 +13,14 @@ class JobBase(BaseModel):
     EducationLevel: Optional[EducationLevelEnum] = EducationLevelEnum.BACHELOR
     Status: JobStatus = JobStatus.DRAFT
 
+# Schema trả về dữ liệu cho Frontend
+class JobResponse(JobBase):
+    Id: int 
+    CreatedAt: datetime
+    Status: JobStatus
+
+    model_config = ConfigDict(from_attributes=True)
+
 # Schema dùng để tạo tin tuyển dụng mới
 class JobCreate(JobBase):
     pass
@@ -31,10 +39,3 @@ class JobUpdate(BaseModel):
     EducationLevel: Optional[EducationLevelEnum] = None
     Status: Optional[JobStatus] = None
 
-# Schema trả về dữ liệu cho Frontend
-class JobResponse(JobBase):
-    Id: int 
-    CreatedAt: datetime
-    Status: JobStatus
-
-    model_config = ConfigDict(from_attributes=True)

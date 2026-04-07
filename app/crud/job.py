@@ -29,19 +29,22 @@ def get_jobs(
     total = query.count()
 
     jobs = (
-        query
-        .order_by(Job.CreatedAt.desc())
+        query.order_by(Job.CreatedAt.desc())
         .offset(skip)
         .limit(limit)
         .all()
     )
-
     return jobs, total
+
+
 
 def get_job_by_id(db: Session, job_id: int) -> Optional[Job]:  
     """Tìm job theo primary key. Trả None nếu không tồn tại."""
     return db.query(Job).filter(Job.Id == job_id).first()
 
+def get_job_by_name(db: Session, name: str) -> Optional[Job]:
+    """Tìm job theo tên (không phân biệt hoa thường)."""
+    return db.query(Job).filter(Job.Title.ilike(name)).first()
 
 # ─── CREATE ──────────────────────────────────────────────────
 def create_job(db: Session, **kwargs) -> Job:
@@ -80,10 +83,6 @@ def delete_job(db: Session, job: Job) -> None:
     db.delete(job)
     db.commit()
 
-from sqlalchemy.orm import Session
 
-from app.models.job import Job
 
-def get_job_by_name(db: Session, name: str) -> Optional[Job]:
-    """Tìm job theo tên (không phân biệt hoa thường)."""
-    return db.query(Job).filter(Job.Title.ilike(name)).first()
+
