@@ -31,7 +31,7 @@ source venv/bin/activate
 
 ```bash
 # Cài đặt toàn bộ thư viện từ file requirements
-pip install -r requirement.txt
+pip install -r requirements.txt
 
 # Cài đặt thủ công các thư viện cốt lõi nếu cần
 pip install fastapi[all] uvicorn sentence-transformers pgvector
@@ -206,4 +206,13 @@ alembic upgrade head
 
 ```bash
 docker run --name my-postgres-vector -e POSTGRES_PASSWORD=12345 -p 5432:5432 -d ankane/pgvector
+```
+
+```python
+# Lệnh thực thi từ máy vật lý để điều khiển container Backend 
+docker-compose exec web alembic revision --autogenerate -m "update tables" 
+ 
+# Áp dụng các thay đổi chính thức vào Database 
+docker-compose exec web alembic upgrade head
+
 ```
