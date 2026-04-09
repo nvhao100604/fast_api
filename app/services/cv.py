@@ -1,4 +1,5 @@
 from os import path
+from typing import List
 
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
@@ -108,7 +109,8 @@ def get_cv_file_path(db: Session, cv_id: int, current_user: User) -> str:
     """
     # 1. Lấy bản ghi CV từ database
     cv_record = cv_crud.get_cv_by_id(db=db, cv_id=cv_id)
-    
+    print(f"cv record id: {cv_record.UserId}")
+    print(f"cv record id: {current_user.Id}")
     if not cv_record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -208,3 +210,40 @@ def run_cv_parsing_task(db: Session, cv_id: int, current_user: User):
             skill_service.add_skill_to_cv(db, current_user, skill_in)
         except Exception:
             continue
+
+
+def upload_multiple_cvs(db: Session, files: List[UploadFile], user_id: int):
+    """
+    Upload nhiều CV cùng lúc.
+    - File nào hợp lệ → lưu và tạo record
+    - File nào lỗi → bỏ qua, ghi nhận lỗi
+    - Trả về danh sách thành công và thất bại
+    """
+    success = []
+    failed = []
+
+    for file in files:
+        try:
+            cv = upload_and_create_cv(db=db, file=file, user_id=user_id)
+            success.append(cv)
+        except HTTPException as e:
+            failed.append({
+                "filename": file.filename,
+                "error": e.detail
+            })
+        except Exception as e:
+            failed.append({
+                "filename": file.filename,
+                "error": str(e)
+            })
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tất cả file upload thất bại: {failed}"
+        )
+
+    return {
+        "success": success,
+        "failed": failed
+    }

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_user
 from app.api.v1.schemas import ResponseSchema, CVResponse
-from app.api.v1.schemas.cv import CVFilter
+from app.api.v1.schemas.cv import CVBatchUploadResponse, CVFilter
 from app.services import cv as cv_services
 from app.models import User
 
@@ -98,7 +98,7 @@ async def download_cv(
 ):
     file_path = cv_services.get_cv_file_path(db=db, cv_id=cv_id, current_user=current_user)
     if not file_path:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail="Không tìm thấy file")
         
     return FileResponse(path=file_path, filename=f"CV_{cv_id}.pdf")
 
@@ -124,4 +124,31 @@ async def trigger_parsing(
         success=True,
         message="CV parsed and saved successfully",
         data=None
+    )
+
+# 6. UPLOAD MULTIPLE CVs
+@private_router.post(
+    "/upload/batch",
+    response_model=ResponseSchema[List[CVResponse]],
+    summary="Upload Multiple CVs",
+    description="Upload nhiều file CV cùng lúc (PDF, DOCX)."
+)
+async def upload_multiple_cvs(
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    results = cv_services.upload_multiple_cvs(
+        db=db,
+        files=files,
+        user_id=current_user.Id
+    )
+
+    return ResponseSchema[CVBatchUploadResponse](
+        success=True,
+        message=f"Đã tải {len(results['success'])}/{len(files)} file(s) CV thành công.",
+        data=CVBatchUploadResponse(
+            success=results["success"],
+            failed=results["failed"]
+        )
     )

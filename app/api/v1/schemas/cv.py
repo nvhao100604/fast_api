@@ -69,3 +69,10 @@ class CVResponse(CVBase):
     educations: List[EducationResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CVBatchUploadResponse(BaseModel):
+    success: List[CVResponse]
+    failed: List[dict]
+
+    model_config = ConfigDict(from_attributes=True)
