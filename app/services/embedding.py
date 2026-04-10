@@ -1,14 +1,9 @@
-import logging
 from fastapi import HTTPException, logger, status
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
 from decimal import Decimal
-from typing import List, Optional, Dict, Tuple
-from sqlalchemy import select
+from typing import List, Dict
 from sqlalchemy.orm import Session
-
 from app.clients.sentence_transformer import get_sentence_transformer
-from app.api.v1.schemas.cv_embedding import CVEmbeddingCreate
 from app.crud import embbeding as embedding_crud
 from app.crud.cv_skill import get_cv_skills
 from app.crud.job_skill import get_job_skills
@@ -16,8 +11,6 @@ from app.crud.match_result import create_match_result
 from app.services.cv import *
 from app.services.job_service import *
 from app.services.education import *
-from app.models import CVEmbedding, JobEmbedding, MatchResult
-
 # ------------------------------------------------------------------------------
 # Matching CV and Job Service
 # ------------------------------------------------------------------------------
@@ -53,10 +46,10 @@ def match_job_result_service(
     print(f"CV Education Embedding: {cv_education_level_embedding_vec[:5]}...")
 
     # Lấy embedding của Job
-    job_requirement_embedding_vec = _embedding((job_detail.RequirementsText + " " + job_detail.Description) or "")
-    job_skill_embedding_vec = _embedding(_skills_to_text(job_skill_detail) or "")
-    job_experience_level_embedding_vec = _embedding(str(job_detail.MinExperience or ""))
-    job_education_level_embedding_vec = _embedding(str(job_detail.EducationLevel or ""))
+    job_requirement_embedding_vec = _embedding(" and ".join(filter(None, [job_detail.RequirementsText or "", job_detail.Description or ""])) or "")
+    job_skill_embedding_vec = _embedding(str(job_detail.required_skills) or "") or ""
+    job_experience_level_embedding_vec = _embedding(str(job_detail.MinExperience) or "") or ""
+    job_education_level_embedding_vec = _embedding(str(job_detail.EducationLevel) or "") or ""
 
     print(f"Job Requirement Embedding: {job_requirement_embedding_vec[:5]}...")
     print(f"Job Skill Embedding: {job_skill_embedding_vec[:5]}...")
@@ -73,7 +66,7 @@ def match_job_result_service(
     ) or Decimal(0) 
 
     store_cv_embedding(db, cv_id, cv_detail.CleanText)
-    store_job_embedding(db, job_id, job_detail.RequirementsText)
+    store_job_embedding(db, job_id, job_detail.RequirementsText or job_detail.Description or "")
     store_match_result(
         db,
         cv_id,
